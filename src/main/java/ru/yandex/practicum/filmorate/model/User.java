@@ -16,6 +16,7 @@ public class User {
 
     private Long id;
 
+    @NotNull
     @Email(message = "Формат электронной почты не соответствует")
     private String email;
 

@@ -16,7 +16,7 @@ import java.util.Map;
 public class UserController {
 
     private final Map<Long, User> users = new HashMap<>();
-    private final Logger log = LoggerFactory.getLogger(FilmController.class);
+    private final Logger log = LoggerFactory.getLogger(UserController.class);
 
 
     @GetMapping
@@ -30,10 +30,10 @@ public class UserController {
         Long id = IdGenerator.getNextId(users);
         user.setId(id);
         users.put(id, user);
-        if (user.getName() == null) {
+        if (user.getName() == null || user.getName().isBlank()) {
             user.setName(user.getLogin());
         }
-        log.info("Добавдег пользователь с id = " + user.getId());
+        log.info("Добавлен пользователь с id = " + user.getId());
         return user;
     }
 
@@ -46,12 +46,13 @@ public class UserController {
         oldUser.setLogin(user.getLogin());
         oldUser.setName(user.getName());
         oldUser.setBirthday(user.getBirthday());
-        if (oldUser.getName() == null) {
+        if (oldUser.getName() == null || oldUser.getName().isBlank()) {
             oldUser.setName(user.getLogin());
         }
         log.info("Обновлён пользователь с id = " + oldUser.getId());
         return oldUser;
     }
+
 
     private void checkId(Long id) {
         if (!users.containsKey(id)) {
