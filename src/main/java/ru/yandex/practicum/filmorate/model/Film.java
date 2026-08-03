@@ -9,6 +9,7 @@ import lombok.Data;
 import ru.yandex.practicum.filmorate.exceptions.ValidationException;
 
 import java.time.LocalDate;
+import java.util.HashSet;
 
 /**
  * Film.
@@ -17,7 +18,6 @@ import java.time.LocalDate;
 public class Film {
 
     private static LocalDate MIN_DATE = LocalDate.of(1895, 12, 28);
-
 
     private Long id;
 
@@ -35,6 +35,9 @@ public class Film {
     @NotNull
     @Positive(message = "Продолжительность фильма должна быть положительным числом")
     private Integer duration;
+
+    //Храним id лайкнувших пользователей
+    private HashSet<Long> likes;
 
     public void validate() {
         if (name.isBlank()) {

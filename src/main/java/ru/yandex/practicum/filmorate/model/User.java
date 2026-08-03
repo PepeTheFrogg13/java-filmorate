@@ -9,6 +9,7 @@ import lombok.Data;
 import ru.yandex.practicum.filmorate.exceptions.ValidationException;
 
 import java.time.LocalDate;
+import java.util.HashSet;
 
 
 @Data
@@ -30,6 +31,9 @@ public class User {
     @JsonFormat(pattern = "yyyy-MM-dd")
     @PastOrPresent(message = "Дата рождения не может быть позже текущего времени")
     private LocalDate birthday;
+
+    //Друзья
+    private HashSet<Long> friends;
 
     public void validate() {
         if (email.isBlank() || !email.contains("@")) {

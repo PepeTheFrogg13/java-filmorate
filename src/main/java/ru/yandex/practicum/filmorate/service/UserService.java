@@ -1,0 +1,93 @@
+package ru.yandex.practicum.filmorate.service;
+
+import jakarta.validation.Valid;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import ru.yandex.practicum.filmorate.controller.UserController;
+import ru.yandex.practicum.filmorate.exceptions.IdNotFoundException;
+import ru.yandex.practicum.filmorate.model.User;
+import ru.yandex.practicum.filmorate.storage.IdGenerator;
+import ru.yandex.practicum.filmorate.storage.UserStorage;
+
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+
+@Service
+public class UserService {
+
+    private final Logger log = LoggerFactory.getLogger(UserService.class);
+
+
+    private UserStorage userStorage;
+
+    private void checkId(Long id) {
+        if (!userStorage.exists(id)) {
+            String message = "Пользователь с id = " + id + " не найден";
+            log.error(message);
+            throw new IdNotFoundException(message);
+        }
+    }
+
+    @Autowired
+    public UserService(UserStorage userStorage) {
+        this.userStorage = userStorage;
+    }
+
+    public Collection<User> findAll() {
+        return userStorage.findAll();
+    }
+
+    public User createUser(User user) {
+        user.validate();
+        userStorage.createUser(user);
+        log.info("Добавлен пользователь с id = " + user.getId());
+        return user;
+    }
+
+    public User updateUser(@Valid @RequestBody User user) {
+        user.validate();
+        checkId(user.getId());
+        return userStorage.updateUser(user);
+    }
+
+    public User addFriend(Long id,Long friendId){
+        checkId(id);
+        checkId(friendId);
+        return userStorage.changeFriend(id,friendId,false);
+    }
+
+    public User deleteFriend(Long id,Long friendId){
+        checkId(id);
+        checkId(friendId);
+        return userStorage.changeFriend(id,friendId,true);
+    }
+
+    public Collection<User> getFriends(Long id){
+        checkId(id);
+        User user = userStorage.getUserById(id);
+        return userStorage.findAll().stream()
+                .filter(u -> user.getFriends().contains(u.getId()))
+                .toList();
+    }
+
+    public Collection<User> getCommonFriends(Long id,Long friendId){
+        checkId(id);
+        checkId(friendId);
+        HashSet<Long> list1 = userStorage.getUserById(id).getFriends();
+        HashSet<Long> list2 = userStorage.getUserById(friendId).getFriends();
+        List<Long> intersection = list1.stream()
+                .filter(list2::contains)
+                .toList();
+        return userStorage.findAll().stream()
+                .filter(u -> intersection.contains(u.getId()))
+                .toList();
+    }
+
+}

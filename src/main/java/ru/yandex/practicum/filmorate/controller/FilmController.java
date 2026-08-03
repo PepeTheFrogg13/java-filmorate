@@ -3,9 +3,14 @@ package ru.yandex.practicum.filmorate.controller;
 import jakarta.validation.Valid;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 import ru.yandex.practicum.filmorate.exceptions.IdNotFoundException;
 import ru.yandex.practicum.filmorate.model.Film;
+import ru.yandex.practicum.filmorate.service.FilmService;
+import ru.yandex.practicum.filmorate.storage.FilmStorage;
+import ru.yandex.practicum.filmorate.storage.IdGenerator;
+import ru.yandex.practicum.filmorate.storage.InMemoryFilmStorage;
 
 import java.util.Collection;
 import java.util.HashMap;
@@ -16,44 +21,26 @@ import java.util.Map;
 @RequestMapping("/films")
 public class FilmController {
 
-    private final Map<Long, Film> films = new HashMap<>();
+    private FilmService filmService;
 
-    private final Logger log = LoggerFactory.getLogger(FilmController.class);
-
+    @Autowired
+    public FilmController(FilmService filmService) {
+        this.filmService = filmService;
+    }
 
     @GetMapping
     public Collection<Film> findAll() {
-        return films.values();
+        return filmService.findAll();
     }
 
     @PostMapping
     public Film createFilm(@Valid @RequestBody Film film) {
-        film.validate();
-        Long id = IdGenerator.getNextId(films);
-        film.setId(id);
-        films.put(id, film);
-        log.info("Создан фильм с id = " + film.getId());
-        return film;
+        return filmService.createFilm(film);
     }
 
     @PutMapping
     public Film updateFilm(@RequestBody @Valid Film film) {
-        film.validate();
-        checkId(film.getId());
-        Film oldFilm = films.get(film.getId());
-        oldFilm.setName(film.getName());
-        oldFilm.setDescription(film.getDescription());
-        oldFilm.setReleaseDate(film.getReleaseDate());
-        oldFilm.setDuration(film.getDuration());
-        log.info("Обновлён фильм с id = " + oldFilm.getId());
-        return oldFilm;
+        return  filmService.updateFilm(film);
     }
 
-    private void checkId(Long id) {
-        if (!films.containsKey(id)) {
-            String message = "Фильм с id = " + id + " не найден";
-            log.error(message);
-            throw new IdNotFoundException(message);
-        }
-    }
 }
