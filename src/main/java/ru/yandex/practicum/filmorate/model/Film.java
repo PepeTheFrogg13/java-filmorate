@@ -37,7 +37,7 @@ public class Film {
     private Integer duration;
 
     //Храним id лайкнувших пользователей
-    private HashSet<Long> likes;
+    private HashSet<Long> likes = new HashSet<>();
 
     public void validate() {
         if (name.isBlank()) {

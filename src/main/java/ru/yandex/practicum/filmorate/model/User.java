@@ -33,7 +33,7 @@ public class User {
     private LocalDate birthday;
 
     //Друзья
-    private HashSet<Long> friends;
+    private HashSet<Long> friends = new HashSet<>();
 
     public void validate() {
         if (email.isBlank() || !email.contains("@")) {

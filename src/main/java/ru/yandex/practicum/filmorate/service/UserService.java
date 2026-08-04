@@ -24,10 +24,14 @@ public class UserService {
 
     private final Logger log = LoggerFactory.getLogger(UserService.class);
 
-
+    @Autowired
     private UserStorage userStorage;
 
-    private void checkId(Long id) {
+    public UserService(UserStorage userStorage) {
+        this.userStorage = userStorage;
+    }
+
+    public void checkId(Long id) {
         if (!userStorage.exists(id)) {
             String message = "Пользователь с id = " + id + " не найден";
             log.error(message);
@@ -35,41 +39,43 @@ public class UserService {
         }
     }
 
-    @Autowired
-    public UserService(UserStorage userStorage) {
-        this.userStorage = userStorage;
-    }
-
     public Collection<User> findAll() {
         return userStorage.findAll();
     }
 
+    public User findById(Long id) {
+        checkId(id);
+        return userStorage.getUserById(id);
+    }
+
     public User createUser(User user) {
         user.validate();
-        userStorage.createUser(user);
-        log.info("Добавлен пользователь с id = " + user.getId());
-        return user;
+        User newUser = userStorage.createUser(user);
+        log.info("Добавлен пользователь с id = " + newUser.getId());
+        return newUser;
     }
 
     public User updateUser(@Valid @RequestBody User user) {
         user.validate();
         checkId(user.getId());
-        return userStorage.updateUser(user);
+        User updateUser = userStorage.updateUser(user);
+        log.info("Обновлён пользователь с id = " + updateUser.getId());
+        return updateUser;
     }
 
-    public User addFriend(Long id,Long friendId){
+    public User addFriend(Long id, Long friendId) {
         checkId(id);
         checkId(friendId);
-        return userStorage.changeFriend(id,friendId,false);
+        return userStorage.changeFriend(id, friendId, false);
     }
 
-    public User deleteFriend(Long id,Long friendId){
+    public User deleteFriend(Long id, Long friendId) {
         checkId(id);
         checkId(friendId);
-        return userStorage.changeFriend(id,friendId,true);
+        return userStorage.changeFriend(id, friendId, true);
     }
 
-    public Collection<User> getFriends(Long id){
+    public Collection<User> getFriends(Long id) {
         checkId(id);
         User user = userStorage.getUserById(id);
         return userStorage.findAll().stream()
@@ -77,7 +83,7 @@ public class UserService {
                 .toList();
     }
 
-    public Collection<User> getCommonFriends(Long id,Long friendId){
+    public Collection<User> getCommonFriends(Long id, Long friendId) {
         checkId(id);
         checkId(friendId);
         HashSet<Long> list1 = userStorage.getUserById(id).getFriends();
