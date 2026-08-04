@@ -8,7 +8,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 @Component
-public class InMemoryUserStorage implements UserStorage  {
+public class InMemoryUserStorage implements UserStorage {
 
     private final Map<Long, User> users = new HashMap<>();
 
@@ -61,7 +61,7 @@ public class InMemoryUserStorage implements UserStorage  {
     public User changeFriend(Long id, Long friendId, Boolean remove) {
         User user = users.get(id);
         User friend = users.get(friendId);
-        if (remove){
+        if (remove) {
             user.getFriends().remove(friendId);
             friend.getFriends().remove(id);
         } else {

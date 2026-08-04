@@ -18,6 +18,6 @@ public interface UserStorage {
 
     User deleteUser(User user);
 
-    User changeFriend(Long id,Long friendId, Boolean remove);
+    User changeFriend(Long id, Long friendId, Boolean remove);
 
 }

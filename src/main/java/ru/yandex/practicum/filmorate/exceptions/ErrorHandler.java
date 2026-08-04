@@ -12,13 +12,13 @@ public class ErrorHandler {
 
     @ExceptionHandler
     @ResponseStatus(value = HttpStatus.NOT_FOUND)
-    public Map<String,String> handleIdNotFoundException(final IdNotFoundException e){
-        return Map.of("Ошибка",e.getMessage());
+    public Map<String, String> handleIdNotFoundException(final IdNotFoundException e) {
+        return Map.of("Ошибка", e.getMessage());
     }
 
     @ExceptionHandler
     @ResponseStatus(value = HttpStatus.BAD_REQUEST)
-    public Map<String,String> handleValidationException(final ValidationException e){
-        return Map.of("Ошибка",e.getMessage());
+    public Map<String, String> handleValidationException(final ValidationException e) {
+        return Map.of("Ошибка", e.getMessage());
     }
 }
