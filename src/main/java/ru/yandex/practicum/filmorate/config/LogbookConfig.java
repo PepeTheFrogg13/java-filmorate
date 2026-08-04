@@ -9,7 +9,7 @@ import org.zalando.logbook.Logbook;
 public class LogbookConfig {
 
     @Bean
-    public Logbook logbook(){
+    public Logbook logbook() {
         return Logbook.builder()
                 .build();
     }
