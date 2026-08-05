@@ -14,8 +14,8 @@ import java.util.Collection;
 @RequestMapping("/users")
 public class UserController {
 
-    @Autowired
-    private UserService userService;
+
+    private final UserService userService;
 
     public UserController(UserService userService) {
         this.userService = userService;
@@ -24,6 +24,11 @@ public class UserController {
     @GetMapping
     public Collection<User> findAll() {
         return userService.findAll();
+    }
+
+    @GetMapping("/users/{id}")
+    public User getUserById(@PathVariable Long id) {
+        return userService.findById(id);
     }
 
     @GetMapping("/{id}/friends")

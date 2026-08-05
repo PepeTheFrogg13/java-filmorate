@@ -7,9 +7,11 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.web.bind.annotation.RequestBody;
 import ru.yandex.practicum.filmorate.exceptions.IdNotFoundException;
+import ru.yandex.practicum.filmorate.exceptions.ValidationException;
 import ru.yandex.practicum.filmorate.model.User;
 import ru.yandex.practicum.filmorate.storage.UserStorage;
 
+import java.time.LocalDate;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.List;
@@ -19,8 +21,8 @@ public class UserService {
 
     private final Logger log = LoggerFactory.getLogger(UserService.class);
 
-    @Autowired
-    private UserStorage userStorage;
+
+    private final UserStorage userStorage;
 
     public UserService(UserStorage userStorage) {
         this.userStorage = userStorage;
@@ -34,6 +36,14 @@ public class UserService {
         }
     }
 
+    public void validate(User user) {
+
+        if (user.getLogin().contains(" ") || user.getLogin().isBlank()) {
+            String message = "Логин не может быть пустым и содержать пробелы";
+            throw new ValidationException(message);
+        }
+    }
+
     public Collection<User> findAll() {
         return userStorage.findAll();
     }
@@ -44,14 +54,14 @@ public class UserService {
     }
 
     public User createUser(User user) {
-        user.validate();
+        validate(user);
         User newUser = userStorage.createUser(user);
         log.info("Добавлен пользователь с id = " + newUser.getId());
         return newUser;
     }
 
     public User updateUser(@Valid @RequestBody User user) {
-        user.validate();
+        validate(user);
         checkId(user.getId());
         User updateUser = userStorage.updateUser(user);
         log.info("Обновлён пользователь с id = " + updateUser.getId());

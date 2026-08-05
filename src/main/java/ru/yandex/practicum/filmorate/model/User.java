@@ -35,19 +35,5 @@ public class User {
     //Друзья
     private HashSet<Long> friends = new HashSet<>();
 
-    public void validate() {
-        if (email.isBlank() || !email.contains("@")) {
-            throw new ValidationException("Электронная почта не может быть пустой и должна содержать символ @");
-        }
-
-        if (login.contains(" ") || login.isBlank()) {
-            String message = "Логин не может быть пустым и содержать пробелы";
-            throw new ValidationException(message);
-        }
-
-        if (birthday.isAfter(LocalDate.now())) {
-            throw new ValidationException("Дата рождения не может быть в будущем");
-        }
-    }
 
 }

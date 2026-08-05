@@ -5,15 +5,29 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import ru.yandex.practicum.filmorate.exceptions.IdNotFoundException;
+import ru.yandex.practicum.filmorate.exceptions.ValidationException;
 import ru.yandex.practicum.filmorate.model.Film;
 import ru.yandex.practicum.filmorate.storage.FilmStorage;
 
+import java.time.LocalDate;
 import java.util.Collection;
 
 @Service
 public class FilmService {
 
+    private static LocalDate MIN_DATE = LocalDate.of(1895, 12, 28);
+
     private final Logger log = LoggerFactory.getLogger(FilmService.class);
+
+    private final FilmStorage filmStorage;
+    //Внедряем зависимость UserService, чтобы опрашивать его насчет существования пользователя
+    private final UserService userService;
+
+
+    public FilmService(FilmStorage filmStorage, UserService userService) {
+        this.filmStorage = filmStorage;
+        this.userService = userService;
+    }
 
     public void checkId(Long id) {
         if (!filmStorage.exists(id)) {
@@ -23,16 +37,13 @@ public class FilmService {
         }
     }
 
-    @Autowired
-    private FilmStorage filmStorage;
-    //Внедряем зависимость UserService, чтобы опрашивать его насчет существования пользователя
-    @Autowired
-    private UserService userService;
+    public void validate(Film film) {
 
+        if (film.getReleaseDate().isBefore(MIN_DATE)) {
+            String message = "Дата фильма не может быть раньше " + MIN_DATE;
+            throw new ValidationException(message);
+        }
 
-    public FilmService(FilmStorage filmStorage, UserService userService) {
-        this.filmStorage = filmStorage;
-        this.userService = userService;
     }
 
     public Collection<Film> findAll() {
@@ -45,7 +56,7 @@ public class FilmService {
     }
 
     public Film createFilm(Film film) {
-        film.validate();
+        validate(film);
         Film newFilm = filmStorage.createFilm(film);
         log.info("Создан фильм с id = " + newFilm.getId());
         return newFilm;
@@ -53,7 +64,7 @@ public class FilmService {
     }
 
     public Film updateFilm(Film film) {
-        film.validate();
+        validate(film);
         checkId(film.getId());
         Film updateFilm = filmStorage.updateFilm(film);
         log.info("Изменён фильм с id = " + updateFilm.getId());
