@@ -6,7 +6,6 @@ import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.PastOrPresent;
 import lombok.Data;
-import ru.yandex.practicum.filmorate.exceptions.ValidationException;
 
 import java.time.LocalDate;
 import java.util.HashSet;
