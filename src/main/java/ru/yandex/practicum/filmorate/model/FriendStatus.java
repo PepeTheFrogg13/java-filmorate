@@ -7,9 +7,9 @@ import lombok.Data;
 @Data
 public class FriendStatus {
 
-    Long id;
+    private Long id;
 
     @NotNull
-    String name;
+    private String name;
 
 }
