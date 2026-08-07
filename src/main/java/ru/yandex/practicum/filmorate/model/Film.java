@@ -33,6 +33,9 @@ public class Film {
     @Positive(message = "Продолжительность фильма должна быть положительным числом")
     private Integer duration;
 
+    @NotNull
+    private Rating rating;
+
     //Храним id лайкнувших пользователей
     private HashSet<Long> likes = new HashSet<>();
 
