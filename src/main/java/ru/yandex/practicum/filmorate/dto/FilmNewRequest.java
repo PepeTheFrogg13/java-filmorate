@@ -1,4 +1,5 @@
-package ru.yandex.practicum.filmorate.model;
+package ru.yandex.practicum.filmorate.dto;
+
 
 import com.fasterxml.jackson.annotation.JsonFormat;
 import jakarta.validation.constraints.NotBlank;
@@ -9,16 +10,9 @@ import lombok.Data;
 
 import java.time.LocalDate;
 import java.util.ArrayList;
-import java.util.List;
 
-/**
- * Film.
- */
 @Data
-public class Film {
-
-    private Long id;
-
+public class FilmNewRequest {
     @NotBlank(message = "Название не может быть пустым")
     private String name;
 
@@ -34,11 +28,9 @@ public class Film {
     @Positive(message = "Продолжительность фильма должна быть положительным числом")
     private Integer duration;
 
-    @NotNull
-    private Rating rating;
+    //Ссылка на рейтинг
+    private RatingInsert mpa;
 
-    private List<Genre> genreList = new ArrayList<>();
-
-    private List<User> likeList = new ArrayList<>();
-
+    //перечень жанров
+    private ArrayList<GenreInsert> genres = new ArrayList<>();
 }

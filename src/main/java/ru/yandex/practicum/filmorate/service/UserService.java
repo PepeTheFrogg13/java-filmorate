@@ -1,17 +1,21 @@
 package ru.yandex.practicum.filmorate.service;
 
-import jakarta.validation.Valid;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
-import org.springframework.web.bind.annotation.RequestBody;
+import ru.yandex.practicum.filmorate.dto.UserDto;
+import ru.yandex.practicum.filmorate.dto.UserNewRequest;
+import ru.yandex.practicum.filmorate.dto.UserUpdateRequest;
 import ru.yandex.practicum.filmorate.exceptions.IdNotFoundException;
 import ru.yandex.practicum.filmorate.exceptions.ValidationException;
+import ru.yandex.practicum.filmorate.mappers.UserMapper;
 import ru.yandex.practicum.filmorate.model.User;
 import ru.yandex.practicum.filmorate.storage.UserStorage;
+
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Optional;
 
 @Service
 public class UserService {
@@ -25,14 +29,6 @@ public class UserService {
         this.userStorage = userStorage;
     }
 
-    public void checkId(Long id) {
-        if (!userStorage.exists(id)) {
-            String message = "Пользователь с id = " + id + " не найден";
-            log.error(message);
-            throw new IdNotFoundException(message);
-        }
-    }
-
     public void validate(User user) {
 
         if (user.getLogin().contains(" ") || user.getLogin().isBlank()) {
@@ -41,55 +37,98 @@ public class UserService {
         }
     }
 
-    public Collection<User> findAll() {
-        return userStorage.findAll();
+    public Collection<UserDto> findAll() {
+        List<User> userList = userStorage.findAll().stream().toList();
+        for (User user : userList) {
+            user.setFriendlist((List<User>) userStorage.findFriends(user.getId()));
+        }
+        return userList.stream().map(UserMapper::mapToUserDto).toList();
     }
 
-    public User findById(Long id) {
-        checkId(id);
-        return userStorage.getUserById(id);
+    public UserDto findById(Long id) {
+        Optional<User> userOptional = userStorage.getUserById(id);
+        if (userOptional.isEmpty()) {
+            throw new IdNotFoundException("Фильм с id = " + id + " не найден");
+        } else {
+            return UserMapper.mapToUserDto(userOptional.get());
+        }
     }
 
-    public User createUser(User user) {
+    public User createUser(UserNewRequest userNewRequest) {
+        User user = UserMapper.mapToUser(userNewRequest);
         validate(user);
         User newUser = userStorage.createUser(user);
         log.info("Добавлен пользователь с id = " + newUser.getId());
         return newUser;
     }
 
-    public User updateUser(@Valid @RequestBody User user) {
+    public User updateUser(UserUpdateRequest userUpdateRequest) {
+        User user = UserMapper.mapToUser(userUpdateRequest);
         validate(user);
-        checkId(user.getId());
-        User updateUser = userStorage.updateUser(user);
-        log.info("Обновлён пользователь с id = " + updateUser.getId());
-        return updateUser;
+        Optional<User> userOptional = userStorage.getUserById(user.getId());
+        if (userOptional.isEmpty()) {
+            throw new IdNotFoundException("Пользователь с id = " + user.getId() + " не найден");
+        }
+        log.info("Обновлён пользователь с id = " + user.getId());
+        return userStorage.updateUser(user).get();
     }
 
     public User addFriend(Long id, Long friendId) {
-        checkId(id);
-        checkId(friendId);
-        return userStorage.changeFriend(id, friendId, false);
+        Optional<User> userOptional = userStorage.getUserById(id);
+        if (userOptional.isEmpty()) {
+            throw new IdNotFoundException("Пользователь с id = " + id + " не найден");
+        }
+        userOptional = userStorage.getUserById(friendId);
+        if (userOptional.isEmpty()) {
+            throw new IdNotFoundException("Пользователь с id = " + friendId + " не найден");
+        }
+        return userStorage.changeFriend(id, friendId, 1).get();
     }
 
     public User deleteFriend(Long id, Long friendId) {
-        checkId(id);
-        checkId(friendId);
-        return userStorage.changeFriend(id, friendId, true);
+        Optional<User> userOptional = userStorage.getUserById(id);
+        if (userOptional.isEmpty()) {
+            throw new IdNotFoundException("Пользователь с id = " + id + " не найден");
+        }
+        userOptional = userStorage.getUserById(friendId);
+        if (userOptional.isEmpty()) {
+            throw new IdNotFoundException("Пользователь с id = " + friendId + " не найден");
+        }
+        return userStorage.changeFriend(id, friendId, 2).get();
     }
 
+    public User confirmFriend(Long id, Long friendId) {
+        Optional<User> userOptional = userStorage.getUserById(id);
+        if (userOptional.isEmpty()) {
+            throw new IdNotFoundException("Пользователь с id = " + id + " не найден");
+        }
+        userOptional = userStorage.getUserById(friendId);
+        if (userOptional.isEmpty()) {
+            throw new IdNotFoundException("Пользователь с id = " + friendId + " не найден");
+        }
+        return userStorage.changeFriend(id, friendId, 3).get();
+    }
+
+
     public Collection<User> getFriends(Long id) {
-        checkId(id);
-        User user = userStorage.getUserById(id);
-        return userStorage.findAll().stream()
-                .filter(u -> user.getFriends().contains(u.getId()))
-                .toList();
+        Optional<User> userOptional = userStorage.getUserById(id);
+        if (userOptional.isEmpty()) {
+            throw new IdNotFoundException("Пользователь с id = " + id + " не найден");
+        }
+        return userStorage.findFriends(id);
     }
 
     public Collection<User> getCommonFriends(Long id, Long friendId) {
-        checkId(id);
-        checkId(friendId);
-        HashSet<Long> list1 = userStorage.getUserById(id).getFriends();
-        HashSet<Long> list2 = userStorage.getUserById(friendId).getFriends();
+        Optional<User> userOptional = userStorage.getUserById(id);
+        if (userOptional.isEmpty()) {
+            throw new IdNotFoundException("Пользователь с id = " + id + " не найден");
+        }
+        userOptional = userStorage.getUserById(friendId);
+        if (userOptional.isEmpty()) {
+            throw new IdNotFoundException("Пользователь с id = " + friendId + " не найден");
+        }
+        HashSet<Long> list1 = new HashSet<>(userStorage.findFriends(id).stream().map(User::getId).toList());
+        HashSet<Long> list2 = new HashSet<>(userStorage.findFriends(friendId).stream().map(User::getId).toList());
         List<Long> intersection = list1.stream()
                 .filter(list2::contains)
                 .toList();
