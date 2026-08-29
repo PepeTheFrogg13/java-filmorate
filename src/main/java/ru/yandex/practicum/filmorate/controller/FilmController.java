@@ -43,7 +43,7 @@ public class FilmController {
     }
 
     @PutMapping
-    public Film updateFilm(@RequestBody @Valid FilmUpdateRequest film) {
+    public FilmDto updateFilm(@RequestBody @Valid FilmUpdateRequest film) {
         return filmService.updateFilm(film);
     }
 

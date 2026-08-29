@@ -8,7 +8,9 @@ import jakarta.validation.constraints.Positive;
 import jakarta.validation.constraints.Size;
 import lombok.Data;
 
+
 import java.time.LocalDate;
+import java.util.ArrayList;
 
 @Data
 public class FilmUpdateRequest {
@@ -29,4 +31,12 @@ public class FilmUpdateRequest {
     @NotNull
     @Positive(message = "Продолжительность фильма должна быть положительным числом")
     private Integer duration;
+
+    //Ссылка на рейтинг
+    private RatingInsert mpa;
+
+    //перечень жанров
+    private ArrayList<GenreInsert> genres = new ArrayList<>();
+
+
 }

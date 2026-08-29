@@ -20,5 +20,7 @@ public interface FilmStorage {
 
     Optional<Film> changeLikes(Long id, Long userId, Boolean remove);
 
+    Collection<Film> findTopLikes(Integer top);
+
 
 }

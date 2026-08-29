@@ -16,10 +16,9 @@ import ru.yandex.practicum.filmorate.model.Rating;
 import ru.yandex.practicum.filmorate.model.User;
 import ru.yandex.practicum.filmorate.storage.*;
 
+import java.security.Key;
 import java.time.LocalDate;
-import java.util.Collection;
-import java.util.List;
-import java.util.Optional;
+import java.util.*;
 
 @Service
 public class FilmService {
@@ -32,16 +31,18 @@ public class FilmService {
     private final UserStorage userStorage;
     private final RatingStorage ratingStorage;
     private final GenreStorage genreStorage;
+    private final FilmGenreStorage filmGenreStorage;
 
 
     public FilmService(FilmStorage filmStorage,
                        RatingStorage ratingStorage,
                        GenreStorage genreStorage,
-                       UserStorage userStorage) {
+                       UserStorage userStorage, FilmGenreStorage filmGenreStorage) {
         this.filmStorage = filmStorage;
         this.ratingStorage = ratingStorage;
         this.genreStorage = genreStorage;
         this.userStorage = userStorage;
+        this.filmGenreStorage = filmGenreStorage;
     }
 
     public void validate(Film film) {
@@ -53,9 +54,10 @@ public class FilmService {
     }
 
     public Collection<FilmDto> findAll() {
+        Map<Long,List> filmGenres = filmGenreStorage.getFilmGenres();
         List<Film> filmList = filmStorage.findAll().stream().toList();
         for (Film film : filmList) {
-            film.setGenreList(genreStorage.findByFilm(film.getId()).stream().toList());
+            film.setGenreList(filmGenres.get(film.getId()));
         }
         for (Film film : filmList) {
             film.setLikeList(userStorage.findLikesByFilm(film.getId()).stream().toList());
@@ -96,16 +98,15 @@ public class FilmService {
         return FilmMapper.mapToFilmDto(newFilm);
     }
 
-    public Film updateFilm(FilmUpdateRequest filmUpdateRequest) {
+    public FilmDto updateFilm(FilmUpdateRequest filmUpdateRequest) {
         Film film = FilmMapper.mapToFilm(filmUpdateRequest);
         Optional<Film> filmOptional = filmStorage.updateFilm(film);
         if (filmOptional.isEmpty()) {
             throw new IdNotFoundException("Фильм с id = " + film.getId() + " не найден");
-        } else {
-            return filmOptional.get();
         }
 
-        /*Optional<Rating> ratingOptional = ratingStorage.findById(filmUpdateRequest.getMpa().getId());
+        Optional<Rating> ratingOptional = ratingStorage.findById(filmUpdateRequest.getMpa().getId());
+
 
         if (ratingOptional.isEmpty()) {
             throw new IdNotFoundException("Рейтинг с id = " + filmUpdateRequest.getMpa().getId()+ " не найден");
@@ -121,10 +122,7 @@ public class FilmService {
                 film.getGenreList().add(genreOptional.get());
             }
         }
-
-
-         */
-
+        return FilmMapper.mapToFilmDto(film);
     }
 
     public Film deleteFilm(Film film) {
@@ -158,10 +156,15 @@ public class FilmService {
     }
 
     public Collection<FilmDto> findTop(Integer top) {
-        return findAll().stream()
-                .sorted((f1, f2) -> f2.getLikeList().size() - f1.getLikeList().size())
-                .limit(top)
-                .toList();
+        Map<Long,List> filmGenres = filmGenreStorage.getFilmGenres();
+        List<Film> filmList = filmStorage.findTopLikes(top).stream().toList();
+        for (Film film : filmList) {
+            film.setGenreList(filmGenres.get(film.getId()));
+        }
+        for (Film film : filmList) {
+            film.setLikeList(userStorage.findLikesByFilm(film.getId()).stream().toList());
+        }
+        return filmList.stream().map(FilmMapper::mapToFilmDto).toList();
     }
 
 }

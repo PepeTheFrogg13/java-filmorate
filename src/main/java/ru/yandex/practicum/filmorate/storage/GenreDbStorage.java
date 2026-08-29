@@ -33,4 +33,5 @@ public class GenreDbStorage extends BaseRepository<Genre> implements GenreStorag
     public Collection<Genre> findByFilm(Long id) {
         return findMany(FIND_FILM_GENRES, id);
     }
+
 }
