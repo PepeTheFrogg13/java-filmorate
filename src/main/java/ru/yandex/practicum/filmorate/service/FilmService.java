@@ -16,7 +16,6 @@ import ru.yandex.practicum.filmorate.model.Rating;
 import ru.yandex.practicum.filmorate.model.User;
 import ru.yandex.practicum.filmorate.storage.*;
 
-import java.security.Key;
 import java.time.LocalDate;
 import java.util.*;
 
@@ -54,7 +53,7 @@ public class FilmService {
     }
 
     public Collection<FilmDto> findAll() {
-        Map<Long,List> filmGenres = filmGenreStorage.getFilmGenres();
+        Map<Long, List> filmGenres = filmGenreStorage.getFilmGenres();
         List<Film> filmList = filmStorage.findAll().stream().toList();
         for (Film film : filmList) {
             film.setGenreList(filmGenres.get(film.getId()));
@@ -109,7 +108,7 @@ public class FilmService {
 
 
         if (ratingOptional.isEmpty()) {
-            throw new IdNotFoundException("Рейтинг с id = " + filmUpdateRequest.getMpa().getId()+ " не найден");
+            throw new IdNotFoundException("Рейтинг с id = " + filmUpdateRequest.getMpa().getId() + " не найден");
         }
         film.setRating(ratingOptional.get());
 
@@ -156,7 +155,7 @@ public class FilmService {
     }
 
     public Collection<FilmDto> findTop(Integer top) {
-        Map<Long,List> filmGenres = filmGenreStorage.getFilmGenres();
+        Map<Long, List> filmGenres = filmGenreStorage.getFilmGenres();
         List<Film> filmList = filmStorage.findTopLikes(top).stream().toList();
         for (Film film : filmList) {
             film.setGenreList(filmGenres.get(film.getId()));
