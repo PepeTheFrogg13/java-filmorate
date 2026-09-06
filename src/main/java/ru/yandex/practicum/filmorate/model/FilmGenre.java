@@ -1,18 +1,11 @@
 package ru.yandex.practicum.filmorate.model;
 
-
-import jakarta.validation.constraints.NotNull;
 import lombok.Data;
 
 @Data
 public class FilmGenre {
 
-    private Long id;
+    private Long filmId;
 
-    @NotNull
-    private Film film;
-
-    @NotNull
-    private Genre genre;
-
+    private Genre filmGenre;
 }

@@ -1,0 +1,19 @@
+package ru.yandex.practicum.filmorate.dto;
+
+
+import lombok.Data;
+import ru.yandex.practicum.filmorate.model.User;
+
+import java.time.LocalDate;
+import java.util.ArrayList;
+import java.util.List;
+
+@Data
+public class UserDto {
+    private Long id;
+    private String email;
+    private String login;
+    private String name;
+    private LocalDate birthday;
+    private List<User> friendlist = new ArrayList<>();
+}

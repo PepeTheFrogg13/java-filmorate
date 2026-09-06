@@ -1,4 +1,4 @@
-package ru.yandex.practicum.filmorate.model;
+package ru.yandex.practicum.filmorate.dto;
 
 import com.fasterxml.jackson.annotation.JsonFormat;
 import jakarta.validation.constraints.Email;
@@ -8,14 +8,9 @@ import jakarta.validation.constraints.PastOrPresent;
 import lombok.Data;
 
 import java.time.LocalDate;
-import java.util.ArrayList;
-import java.util.List;
-
 
 @Data
-public class User {
-
-    private Long id;
+public class UserNewRequest {
 
     @NotNull
     @Email(message = "Формат электронной почты не соответствует")
@@ -24,15 +19,10 @@ public class User {
     @NotBlank(message = "Логин не может быть пустым")
     private String login;
 
-
     private String name;
 
     @NotNull
     @JsonFormat(pattern = "yyyy-MM-dd")
     @PastOrPresent(message = "Дата рождения не может быть позже текущего времени")
     private LocalDate birthday;
-
-    //Список друзей
-    private List<User> friendlist = new ArrayList<>();
-
 }
