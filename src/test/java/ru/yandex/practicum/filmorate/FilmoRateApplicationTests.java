@@ -38,6 +38,5 @@ class FilmoRateApplicationTests {
 
         Collection<User> users = userStorage.findAll();
         assertThat(users.size()).isEqualTo(3);
-
     }
 }

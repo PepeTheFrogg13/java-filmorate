@@ -1,6 +1,7 @@
 package ru.yandex.practicum.filmorate.dto;
 
 import lombok.Data;
+import ru.yandex.practicum.filmorate.model.Director;
 import ru.yandex.practicum.filmorate.model.Genre;
 import ru.yandex.practicum.filmorate.model.Rating;
 import ru.yandex.practicum.filmorate.model.User;
@@ -8,6 +9,7 @@ import ru.yandex.practicum.filmorate.model.User;
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Set;
 
 @Data
 public class FilmDto {
@@ -19,4 +21,5 @@ public class FilmDto {
     private Rating mpa;
     private List<Genre> genres = new ArrayList<>();
     private List<User> likeList = new ArrayList<>();
+    private Set<Director> directors;
 }

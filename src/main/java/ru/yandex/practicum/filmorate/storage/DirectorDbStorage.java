@@ -32,7 +32,7 @@ public class DirectorDbStorage {
         return jdbcTemplate.query(sql, DIRECTOR_ROW_MAPPER);
     }
 
-    public Director findById(int id) {
+    public Director findById(Long id) {
         String sql = "SELECT \"DirectorId\", \"Name\" FROM \"directors\" WHERE \"DirectorId\" = ?";
         List<Director> result = jdbcTemplate.query(sql, DIRECTOR_ROW_MAPPER, id);
         if (result.isEmpty()) {

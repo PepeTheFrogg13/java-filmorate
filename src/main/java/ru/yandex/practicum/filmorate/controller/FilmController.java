@@ -10,6 +10,7 @@ import ru.yandex.practicum.filmorate.service.FilmService;
 
 
 import java.util.Collection;
+import java.util.List;
 
 
 @RestController
@@ -57,4 +58,17 @@ public class FilmController {
         return filmService.deleteLike(id, userId);
     }
 
+    @GetMapping("/director/{directorId}")
+    public List<FilmDto> getFilmsByDirector(
+            @PathVariable Long directorId,
+            @RequestParam(defaultValue = "year") String sortBy) {
+        return filmService.getFilmsByDirector(directorId, sortBy);
+    }
+
+    @GetMapping("/search")
+    public List<FilmDto> searchFilms(
+            @RequestParam String query,
+            @RequestParam(defaultValue = "title") String by) {
+        return filmService.searchFilms(query, by);
+    }
 }
