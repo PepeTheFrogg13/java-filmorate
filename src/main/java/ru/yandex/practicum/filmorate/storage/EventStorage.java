@@ -9,5 +9,6 @@ import java.util.List;
 
 public interface EventStorage {
     void addEvent(Long userId, EventType eventType, Operation operation, Long entityId);
+
     List<Event> getEventsByUserIds(Collection<Long> userIds);
 }
