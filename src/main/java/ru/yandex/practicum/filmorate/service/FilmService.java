@@ -10,10 +10,7 @@ import ru.yandex.practicum.filmorate.dto.GenreInsert;
 import ru.yandex.practicum.filmorate.exceptions.IdNotFoundException;
 import ru.yandex.practicum.filmorate.exceptions.ValidationException;
 import ru.yandex.practicum.filmorate.mappers.FilmMapper;
-import ru.yandex.practicum.filmorate.model.Film;
-import ru.yandex.practicum.filmorate.model.Genre;
-import ru.yandex.practicum.filmorate.model.Rating;
-import ru.yandex.practicum.filmorate.model.User;
+import ru.yandex.practicum.filmorate.model.*;
 import ru.yandex.practicum.filmorate.storage.*;
 
 import java.time.LocalDate;
@@ -31,17 +28,19 @@ public class FilmService {
     private final RatingStorage ratingStorage;
     private final GenreStorage genreStorage;
     private final FilmGenreStorage filmGenreStorage;
+    private final EventStorage eventStorage;
 
 
     public FilmService(FilmStorage filmStorage,
                        RatingStorage ratingStorage,
                        GenreStorage genreStorage,
-                       UserStorage userStorage, FilmGenreStorage filmGenreStorage) {
+                       UserStorage userStorage, FilmGenreStorage filmGenreStorage, EventStorage eventStorage) {
         this.filmStorage = filmStorage;
         this.ratingStorage = ratingStorage;
         this.genreStorage = genreStorage;
         this.userStorage = userStorage;
         this.filmGenreStorage = filmGenreStorage;
+        this.eventStorage = eventStorage;
     }
 
     public void validate(Film film) {
@@ -131,27 +130,32 @@ public class FilmService {
     public Film addLike(Long id, Long userId) {
         Optional<User> optionalUser = userStorage.getUserById(userId);
         if (optionalUser.isEmpty()) {
-            throw new IdNotFoundException("Пользователь с id = " + id + " не найден");
+            throw new IdNotFoundException("Пользователь с id = " + userId + " не найден");
         }
+
         Optional<Film> optionalFilm = filmStorage.changeLikes(id, userId, false);
         if (optionalFilm.isEmpty()) {
             throw new IdNotFoundException("Фильм с id = " + id + " не найден");
-        } else {
-            return optionalFilm.get();
         }
+
+        eventStorage.addEvent(userId, EventType.LIKE, Operation.ADD, id);
+
+        return optionalFilm.get();
     }
 
     public Film deleteLike(Long id, Long userId) {
         Optional<User> optionalUser = userStorage.getUserById(userId);
         if (optionalUser.isEmpty()) {
-            throw new IdNotFoundException("Пользователь с id = " + id + " не найден");
+            throw new IdNotFoundException("Пользователь с id = " + userId + " не найден");
         }
         Optional<Film> optionalFilm = filmStorage.changeLikes(id, userId, true);
         if (optionalFilm.isEmpty()) {
             throw new IdNotFoundException("Фильм с id = " + id + " не найден");
-        } else {
-            return optionalFilm.get();
         }
+
+        eventStorage.addEvent(userId, EventType.LIKE, Operation.REMOVE, id);
+
+        return optionalFilm.get();
     }
 
     public Collection<FilmDto> findTop(Integer top) {
