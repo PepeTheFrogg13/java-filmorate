@@ -19,7 +19,6 @@ import java.util.*;
 @Service
 public class FilmService {
 
-
     private static final LocalDate MIN_DATE = LocalDate.of(1895, 12, 28);
 
     private final Logger log = LoggerFactory.getLogger(FilmService.class);

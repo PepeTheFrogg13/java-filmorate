@@ -43,5 +43,4 @@ public class Film {
     private List<User> likeList = new ArrayList<>();
 
     private Set<Director> directors;
-
 }
