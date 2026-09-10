@@ -24,6 +24,4 @@ public interface FilmStorage {
     Collection<Film> findTopLikes(Integer top);
 
     List<Film> getFilmsByDirector(Long directorId, String sortBy);
-
-    List<Film> search(String query, String by);
 }

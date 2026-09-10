@@ -81,45 +81,6 @@ public class FilmServiceTest {
     }
 
     @Test
-    void shouldSearchByTitle() {
-        createTestFilm("Крадущийся тигр, затаившийся дракон", LocalDate.now());
-
-        List<FilmDto> result = filmService.searchFilms("тигр", "title");
-        assertEquals(1, result.size());
-        assertTrue(result.get(0).getName().contains("тигр"));
-    }
-
-    @Test
-    void shouldSearchByDirector() {
-        Director director = new Director();
-        director.setName("Кристофер Нолан");
-        directorService.createDirector(director);
-
-        createTestFilm("Престиж", LocalDate.now(), director);
-
-        List<FilmDto> result = filmService.searchFilms("нолан", "director");
-        assertEquals(1, result.size());
-        assertEquals("Престиж", result.get(0).getName());
-    }
-
-    @Test
-    void shouldSearchByTitleAndDirector() {
-        Director director = new Director();
-        director.setName("Кристофер Нолан");
-        directorService.createDirector(director);
-
-        // Фильм, который подходит и по названию и по режиссёру
-        createTestFilm("Начало", LocalDate.now(), director);
-        // Фильм, который не подходит
-        createTestFilm("Интерстеллар", LocalDate.now());
-
-        // Ищем по "нолан" – должен найти только "Начало"
-        List<FilmDto> result = filmService.searchFilms("нолан", "title,director");
-        assertEquals(1, result.size());
-        assertEquals("Начало", result.get(0).getName());
-    }
-
-    @Test
     void shouldThrowWhenSortByInvalid() {
         Director director = new Director();
         director.setName("Нолан");
@@ -127,16 +88,5 @@ public class FilmServiceTest {
 
         assertThrows(ValidationException.class,
                 () -> filmService.getFilmsByDirector(director.getId(), "invalid"));
-    }
-
-    @Test
-    void shouldThrowWhenQueryIsEmpty() {
-        assertThrows(ValidationException.class, () -> filmService.searchFilms("", "title"));
-        assertThrows(ValidationException.class, () -> filmService.searchFilms("   ", "director"));
-    }
-
-    @Test
-    void shouldThrowWhenByInvalid() {
-        assertThrows(ValidationException.class, () -> filmService.searchFilms("query", "invalid"));
     }
 }

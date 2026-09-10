@@ -196,19 +196,4 @@ public class FilmService {
         List<Film> films = filmStorage.getFilmsByDirector(directorId, sortBy);
         return films.stream().map(FilmMapper::mapToFilmDto).toList();
     }
-
-    public List<FilmDto> searchFilms(String query, String by) {
-        if (query == null || query.isBlank()) {
-            throw new ValidationException("Query не может быть пустым");
-        }
-        String[] criteria = by.split(",");
-        for (String c : criteria) {
-            String trimmed = c.trim().toLowerCase();
-            if (!"title".equals(trimmed) && !"director".equals(trimmed)) {
-                throw new ValidationException("Недопустимый критерий поиска: " + c);
-            }
-        }
-        List<Film> films = filmStorage.search(query, by);
-        return films.stream().map(FilmMapper::mapToFilmDto).toList();
-    }
 }
