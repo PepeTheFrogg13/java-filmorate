@@ -5,7 +5,7 @@ import org.springframework.jdbc.core.RowMapper;
 import org.springframework.jdbc.support.GeneratedKeyHolder;
 import org.springframework.jdbc.support.KeyHolder;
 import org.springframework.stereotype.Repository;
-import ru.yandex.practicum.filmorate.exceptions.ValidationException;
+import ru.yandex.practicum.filmorate.exceptions.IdNotFoundException;
 import ru.yandex.practicum.filmorate.model.Director;
 
 import java.sql.PreparedStatement;
@@ -36,7 +36,7 @@ public class DirectorDbStorage {
         String sql = "SELECT \"DirectorId\", \"Name\" FROM \"directors\" WHERE \"DirectorId\" = ?";
         List<Director> result = jdbcTemplate.query(sql, DIRECTOR_ROW_MAPPER, id);
         if (result.isEmpty()) {
-            throw new ValidationException("Режиссёр с id " + id + " не найден");
+            throw new IdNotFoundException("Режиссёр с id " + id + " не найден");
         }
         return result.get(0);
     }
@@ -57,7 +57,7 @@ public class DirectorDbStorage {
         String sql = "UPDATE \"directors\" SET \"Name\" = ? WHERE \"DirectorId\" = ?";
         int rows = jdbcTemplate.update(sql, director.getName(), director.getId());
         if (rows == 0) {
-            throw new ValidationException("Режиссёр с id " + director.getId() + " не найден");
+            throw new IdNotFoundException("Режиссёр с id " + director.getId() + " не найден");
         }
         return director;
     }
@@ -66,7 +66,7 @@ public class DirectorDbStorage {
         jdbcTemplate.update("DELETE FROM \"film_director\" WHERE \"DirectorId\" = ?", id);
         int rows = jdbcTemplate.update("DELETE FROM \"directors\" WHERE \"DirectorId\" = ?", id);
         if (rows == 0) {
-            throw new ValidationException("Режиссёр с id " + id + " не найден");
+            throw new IdNotFoundException("Режиссёр с id " + id + " не найден");
         }
     }
 
