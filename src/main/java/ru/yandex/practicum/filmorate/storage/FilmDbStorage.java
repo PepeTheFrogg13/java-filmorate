@@ -3,12 +3,12 @@ package ru.yandex.practicum.filmorate.storage;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.core.RowMapper;
 import org.springframework.stereotype.Repository;
+import org.springframework.transaction.annotation.Transactional;
 import ru.yandex.practicum.filmorate.exceptions.IdNotFoundException;
 import ru.yandex.practicum.filmorate.model.Film;
 import ru.yandex.practicum.filmorate.model.Genre;
 
 
-import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
@@ -25,7 +25,9 @@ public class FilmDbStorage extends BaseRepository<Film> implements FilmStorage {
     private static final String UPDATE_FILM = "UPDATE \"Film\" SET \"Name\" = ?, \"Description\" = ?, \"ReleaseDate\" = ?, \"Duration\" = ? WHERE \"FilmId\" = ?;";
 
     private static final String DELETE_FILM = "DELETE FROM \"Film\" WHERE \"Film\".\"FilmId\" = ?;";
+    private static final String DELETE_FILM_GENRES = "DELETE FROM \"FilmGenre\" WHERE \"FilmId\" = ?;";
     private static final String DELETE_FILM_GENRE = "DELETE FROM \"FilmGenre\" WHERE \"FilmId\" = ? AND \"GenreId\" = ?;";
+    private static final String DELETE_FILM_LIKES = "DELETE FROM \"FilmLikes\" WHERE \"FilmId\" = ?;";
 
     private static final String INSERT_LIKE = "MERGE INTO \"FilmLikes\" (\"FilmId\",\"UserID\") KEY (\"FilmId\",\"UserID\") VALUES (?,?);";
     private static final String DELETE_LIKE = "DELETE FROM \"FilmLikes\" WHERE \"FilmId\" = ? AND \"UserID\" = ?;";
@@ -88,9 +90,11 @@ public class FilmDbStorage extends BaseRepository<Film> implements FilmStorage {
     }
 
     @Override
-    public Film deleteFilm(Film film) {
-        delete(DELETE_FILM, film.getId());
-        return film;
+    @Transactional
+    public void deleteFilm(Long id) {
+        jdbc.update(DELETE_FILM_LIKES, id);
+        jdbc.update(DELETE_FILM_GENRES, id);
+        jdbc.update(DELETE_FILM, id);
     }
 
     @Override
@@ -106,40 +110,6 @@ public class FilmDbStorage extends BaseRepository<Film> implements FilmStorage {
     @Override
     public Collection<Film> findTopLikes(Integer top) {
         return findMany(FIND_TOP_LIKES, top);
-    }
-
-    @Override
-    public Collection<Film> findTopLikes(Integer top, Long genreId, Integer year) {
-        StringBuilder query = new StringBuilder(
-                "SELECT f.*, r.\"Name\" AS \"RatingName\" " +
-                        "FROM \"Film\" f " +
-                        "LEFT JOIN \"Rating\" r ON r.\"RatingId\" = f.\"RatingId\" " +
-                        "LEFT JOIN (" +
-                        "    SELECT \"FilmId\", COUNT(*) AS likes_count " +
-                        "    FROM \"FilmLikes\" " +
-                        "    GROUP BY \"FilmId\"" +
-                        ") lc ON lc.\"FilmId\" = f.\"FilmId\" " +
-                        "WHERE 1 = 1 ");
-
-        List<Object> params = new ArrayList<>();
-
-        if (genreId != null) {
-            query.append("AND EXISTS (" +
-                    "SELECT 1 FROM \"FilmGenre\" fg " +
-                    "WHERE fg.\"FilmId\" = f.\"FilmId\" AND fg.\"GenreId\" = ?" +
-                    ") ");
-            params.add(genreId);
-        }
-
-        if (year != null) {
-            query.append("AND EXTRACT(YEAR FROM f.\"ReleaseDate\") = ? ");
-            params.add(year);
-        }
-
-        query.append("ORDER BY COALESCE(lc.likes_count, 0) DESC, f.\"FilmId\" ASC LIMIT ?;");
-        params.add(top);
-
-        return findMany(query.toString(), params.toArray());
     }
 
 
