@@ -8,6 +8,7 @@ import ru.yandex.practicum.filmorate.model.Film;
 import ru.yandex.practicum.filmorate.model.Genre;
 
 
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
@@ -28,20 +29,6 @@ public class FilmDbStorage extends BaseRepository<Film> implements FilmStorage {
 
     private static final String INSERT_LIKE = "MERGE INTO \"FilmLikes\" (\"FilmId\",\"UserID\") KEY (\"FilmId\",\"UserID\") VALUES (?,?);";
     private static final String DELETE_LIKE = "DELETE FROM \"FilmLikes\" WHERE \"FilmId\" = ? AND \"UserID\" = ?;";
-
-
-    private static final String FIND_COMMON_FILMS =
-            "SELECT f.*, r.\"Name\" AS \"RatingName\" " +
-                    "FROM \"Film\" f " +
-                    "LEFT JOIN \"Rating\" r ON r.\"RatingId\" = f.\"RatingId\" " +
-                    "INNER JOIN \"FilmLikes\" l1 ON l1.\"FilmId\" = f.\"FilmId\" AND l1.\"UserID\" = ? " +
-                    "INNER JOIN \"FilmLikes\" l2 ON l2.\"FilmId\" = f.\"FilmId\" AND l2.\"UserID\" = ? " +
-                    "LEFT JOIN (" +
-                    "    SELECT \"FilmId\", COUNT(*) AS likes_count " +
-                    "    FROM \"FilmLikes\" " +
-                    "    GROUP BY \"FilmId\"" +
-                    ") lc ON lc.\"FilmId\" = f.\"FilmId\" " +
-                    "ORDER BY COALESCE(lc.likes_count, 0) DESC, f.\"FilmId\" ASC;";
 
     private static final String FIND_TOP_LIKES = "SELECT \"Film\".*,\n" +
             "\t   \"Rating\".\"Name\" AS \"RatingName\"\n" +
@@ -122,8 +109,37 @@ public class FilmDbStorage extends BaseRepository<Film> implements FilmStorage {
     }
 
     @Override
-    public Collection<Film> findCommonFilms(Long userId, Long friendId) {
-        return findMany(FIND_COMMON_FILMS, userId, friendId);
+    public Collection<Film> findTopLikes(Integer top, Long genreId, Integer year) {
+        StringBuilder query = new StringBuilder(
+                "SELECT f.*, r.\"Name\" AS \"RatingName\" " +
+                        "FROM \"Film\" f " +
+                        "LEFT JOIN \"Rating\" r ON r.\"RatingId\" = f.\"RatingId\" " +
+                        "LEFT JOIN (" +
+                        "    SELECT \"FilmId\", COUNT(*) AS likes_count " +
+                        "    FROM \"FilmLikes\" " +
+                        "    GROUP BY \"FilmId\"" +
+                        ") lc ON lc.\"FilmId\" = f.\"FilmId\" " +
+                        "WHERE 1 = 1 ");
+
+        List<Object> params = new ArrayList<>();
+
+        if (genreId != null) {
+            query.append("AND EXISTS (" +
+                    "SELECT 1 FROM \"FilmGenre\" fg " +
+                    "WHERE fg.\"FilmId\" = f.\"FilmId\" AND fg.\"GenreId\" = ?" +
+                    ") ");
+            params.add(genreId);
+        }
+
+        if (year != null) {
+            query.append("AND EXTRACT(YEAR FROM f.\"ReleaseDate\") = ? ");
+            params.add(year);
+        }
+
+        query.append("ORDER BY COALESCE(lc.likes_count, 0) DESC, f.\"FilmId\" ASC LIMIT ?;");
+        params.add(top);
+
+        return findMany(query.toString(), params.toArray());
     }
 
 

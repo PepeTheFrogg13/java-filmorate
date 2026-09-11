@@ -22,7 +22,7 @@ public interface FilmStorage {
 
     Collection<Film> findTopLikes(Integer top);
 
-    Collection<Film> findCommonFilms(Long userId, Long friendId);
+    Collection<Film> findTopLikes(Integer top, Long genreId, Integer year);
 
 
 }

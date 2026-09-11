@@ -33,14 +33,11 @@ public class FilmController {
     }
 
     @GetMapping("/popular")
-    public Collection<FilmDto> getTopFilms(@RequestParam(defaultValue = "10") Integer count) {
-        return filmService.findTop(count);
-    }
-
-    @GetMapping("/common")
-    public Collection<FilmDto> getCommonFilms(@RequestParam Long userId,
-                                               @RequestParam Long friendId) {
-        return filmService.findCommonFilms(userId, friendId);
+    public Collection<FilmDto> getTopFilms(
+            @RequestParam(defaultValue = "10") Integer count,
+            @RequestParam(required = false) Long genreId,
+            @RequestParam(required = false) Integer year) {
+        return filmService.findTop(count, genreId, year);
     }
 
     @PostMapping

@@ -155,27 +155,12 @@ public class FilmService {
     }
 
     public Collection<FilmDto> findTop(Integer top) {
-        Map<Long, List> filmGenres = filmGenreStorage.getFilmGenres();
-        List<Film> filmList = filmStorage.findTopLikes(top).stream().toList();
-        for (Film film : filmList) {
-            film.setGenreList(filmGenres.get(film.getId()));
-        }
-        for (Film film : filmList) {
-            film.setLikeList(userStorage.findLikesByFilm(film.getId()).stream().toList());
-        }
-        return filmList.stream().map(FilmMapper::mapToFilmDto).toList();
+        return findTop(top, null, null);
     }
 
-    public Collection<FilmDto> findCommonFilms(Long userId, Long friendId) {
-        if (userStorage.getUserById(userId).isEmpty()) {
-            throw new IdNotFoundException("Пользователь с id = " + userId + " не найден");
-        }
-        if (userStorage.getUserById(friendId).isEmpty()) {
-            throw new IdNotFoundException("Пользователь с id = " + friendId + " не найден");
-        }
-
+    public Collection<FilmDto> findTop(Integer top, Long genreId, Integer year) {
         Map<Long, List> filmGenres = filmGenreStorage.getFilmGenres();
-        List<Film> filmList = filmStorage.findCommonFilms(userId, friendId).stream().toList();
+        List<Film> filmList = filmStorage.findTopLikes(top, genreId, year).stream().toList();
         for (Film film : filmList) {
             film.setGenreList(filmGenres.getOrDefault(film.getId(), new ArrayList<Genre>()));
             film.setLikeList(userStorage.findLikesByFilm(film.getId()).stream().toList());
