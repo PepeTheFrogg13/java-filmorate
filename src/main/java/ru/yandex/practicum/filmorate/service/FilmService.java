@@ -14,18 +14,10 @@ import ru.yandex.practicum.filmorate.model.Film;
 import ru.yandex.practicum.filmorate.model.Genre;
 import ru.yandex.practicum.filmorate.model.Rating;
 import ru.yandex.practicum.filmorate.model.User;
-import ru.yandex.practicum.filmorate.storage.FilmGenreStorage;
-import ru.yandex.practicum.filmorate.storage.FilmStorage;
-import ru.yandex.practicum.filmorate.storage.GenreStorage;
-import ru.yandex.practicum.filmorate.storage.RatingStorage;
-import ru.yandex.practicum.filmorate.storage.UserStorage;
+import ru.yandex.practicum.filmorate.storage.*;
 
 import java.time.LocalDate;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
+import java.util.*;
 
 @Service
 public class FilmService {
@@ -40,11 +32,11 @@ public class FilmService {
     private final GenreStorage genreStorage;
     private final FilmGenreStorage filmGenreStorage;
 
+
     public FilmService(FilmStorage filmStorage,
                        RatingStorage ratingStorage,
                        GenreStorage genreStorage,
-                       UserStorage userStorage,
-                       FilmGenreStorage filmGenreStorage) {
+                       UserStorage userStorage, FilmGenreStorage filmGenreStorage) {
         this.filmStorage = filmStorage;
         this.ratingStorage = ratingStorage;
         this.genreStorage = genreStorage;
@@ -53,6 +45,7 @@ public class FilmService {
     }
 
     public void validate(Film film) {
+
         if (film.getReleaseDate().isBefore(MIN_DATE)) {
             String message = "Дата фильма не может быть раньше " + MIN_DATE;
             throw new ValidationException(message);
@@ -60,19 +53,27 @@ public class FilmService {
     }
 
     public Collection<FilmDto> findAll() {
-        return mapFilmsToDto(filmStorage.findAll());
+        Map<Long, List> filmGenres = filmGenreStorage.getFilmGenres();
+        List<Film> filmList = filmStorage.findAll().stream().toList();
+        for (Film film : filmList) {
+            film.setGenreList(filmGenres.get(film.getId()));
+        }
+        for (Film film : filmList) {
+            film.setLikeList(userStorage.findLikesByFilm(film.getId()).stream().toList());
+        }
+        return filmList.stream().map(FilmMapper::mapToFilmDto).toList();
     }
 
     public FilmDto findById(Long id) {
         Optional<Film> filmOptional = filmStorage.getFilmById(id);
         if (filmOptional.isEmpty()) {
             throw new IdNotFoundException("Фильм с id = " + id + " не найден");
+        } else {
+            Film film = filmOptional.get();
+            film.setGenreList(genreStorage.findByFilm(film.getId()).stream().toList());
+            film.setLikeList(userStorage.findLikesByFilm(film.getId()).stream().toList());
+            return FilmMapper.mapToFilmDto(film);
         }
-
-        Film film = filmOptional.get();
-        film.setGenreList(genreStorage.findByFilm(film.getId()).stream().toList());
-        film.setLikeList(userStorage.findLikesByFilm(film.getId()).stream().toList());
-        return FilmMapper.mapToFilmDto(film);
     }
 
     public FilmDto createFilm(FilmNewRequest filmNewRequest) {
@@ -80,20 +81,19 @@ public class FilmService {
         validate(newFilm);
         Optional<Rating> ratingOptional = ratingStorage.findById(filmNewRequest.getMpa().getId());
         if (ratingOptional.isEmpty()) {
-            throw new IdNotFoundException(
-                    "Рейтинг с id = " + filmNewRequest.getMpa().getId() + " не найден");
+            throw new IdNotFoundException("Рейтинг с id = " + filmNewRequest.getMpa().getId() + " не найден");
         }
         newFilm.setRating(ratingOptional.get());
         for (Long id : filmNewRequest.getGenres().stream().map(GenreInsert::getId).toList()) {
             Optional<Genre> genreOptional = genreStorage.findById(id);
             if (genreOptional.isEmpty()) {
                 throw new IdNotFoundException("Жанр с id = " + id + " не найден");
+            } else {
+                newFilm.getGenreList().add(genreOptional.get());
             }
-            newFilm.getGenreList().add(genreOptional.get());
         }
-
-        filmStorage.createFilm(newFilm);
-        log.info("Создан фильм с id = {}", newFilm.getId());
+        filmStorage.createFilm(newFilm).getId();
+        log.info("Создан фильм с id = " + newFilm.getId());
         return FilmMapper.mapToFilmDto(newFilm);
     }
 
@@ -105,62 +105,65 @@ public class FilmService {
         }
 
         Optional<Rating> ratingOptional = ratingStorage.findById(filmUpdateRequest.getMpa().getId());
+
+
         if (ratingOptional.isEmpty()) {
-            throw new IdNotFoundException(
-                    "Рейтинг с id = " + filmUpdateRequest.getMpa().getId() + " не найден");
+            throw new IdNotFoundException("Рейтинг с id = " + filmUpdateRequest.getMpa().getId() + " не найден");
         }
         film.setRating(ratingOptional.get());
+
 
         for (Long id : filmUpdateRequest.getGenres().stream().map(GenreInsert::getId).toList()) {
             Optional<Genre> genreOptional = genreStorage.findById(id);
             if (genreOptional.isEmpty()) {
                 throw new IdNotFoundException("Жанр с id = " + id + " не найден");
+            } else {
+                film.getGenreList().add(genreOptional.get());
             }
-            film.getGenreList().add(genreOptional.get());
         }
-
         return FilmMapper.mapToFilmDto(film);
     }
 
-    public void deleteFilm(Long filmId) {
-        if (filmStorage.getFilmById(filmId).isEmpty()) {
-            throw new IdNotFoundException("Фильм с id = " + filmId + " не найден");
-        }
-
-        filmStorage.deleteFilm(filmId);
-        log.info("Удалён фильм с id = {}", filmId);
+    public Film deleteFilm(Film film) {
+        return filmStorage.deleteFilm(film);
     }
 
     public Film addLike(Long id, Long userId) {
         Optional<User> optionalUser = userStorage.getUserById(userId);
         if (optionalUser.isEmpty()) {
-            throw new IdNotFoundException("Пользователь с id = " + userId + " не найден");
+            throw new IdNotFoundException("Пользователь с id = " + id + " не найден");
         }
         Optional<Film> optionalFilm = filmStorage.changeLikes(id, userId, false);
         if (optionalFilm.isEmpty()) {
             throw new IdNotFoundException("Фильм с id = " + id + " не найден");
+        } else {
+            return optionalFilm.get();
         }
-        return optionalFilm.get();
     }
 
     public Film deleteLike(Long id, Long userId) {
         Optional<User> optionalUser = userStorage.getUserById(userId);
         if (optionalUser.isEmpty()) {
-            throw new IdNotFoundException("Пользователь с id = " + userId + " не найден");
+            throw new IdNotFoundException("Пользователь с id = " + id + " не найден");
         }
         Optional<Film> optionalFilm = filmStorage.changeLikes(id, userId, true);
         if (optionalFilm.isEmpty()) {
             throw new IdNotFoundException("Фильм с id = " + id + " не найден");
+        } else {
+            return optionalFilm.get();
         }
-        return optionalFilm.get();
     }
 
     public Collection<FilmDto> findTop(Integer top) {
-        return findTop(top, null, null);
-    }
-
-    public Collection<FilmDto> findTop(Integer top, Long genreId, Integer year) {
-        return mapFilmsToDto(filmStorage.findTopLikes(top, genreId, year));
+        Map<Long, List> filmGenres = filmGenreStorage.getFilmGenres();
+        List<Film> filmList = filmStorage.findTopLikes(top).stream().toList();
+        for (Film film : filmList) {
+            film.setGenreList(filmGenres.get(film.getId()));
+        }
+        for (Film film : filmList) {
+            film.setLikeList(userStorage.findLikesByFilm(film.getId()).stream().toList());
+        }
+        return filmList.stream().map(FilmMapper::mapToFilmDto).toList();
     }
 
     public Collection<FilmDto> findCommonFilms(Long userId, Long friendId) {
@@ -171,24 +174,13 @@ public class FilmService {
             throw new IdNotFoundException("Пользователь с id = " + friendId + " не найден");
         }
 
-        return mapFilmsToDto(filmStorage.findCommonFilms(userId, friendId));
-    }
-
-    @SuppressWarnings("unchecked")
-    private Collection<FilmDto> mapFilmsToDto(Collection<Film> films) {
         Map<Long, List> filmGenres = filmGenreStorage.getFilmGenres();
-        List<Film> filmList = films.stream().toList();
-
+        List<Film> filmList = filmStorage.findCommonFilms(userId, friendId).stream().toList();
         for (Film film : filmList) {
-            List<Genre> genres = filmGenres.containsKey(film.getId())
-                    ? (List<Genre>) filmGenres.get(film.getId())
-                    : new ArrayList<>();
-            film.setGenreList(genres);
+            film.setGenreList(filmGenres.getOrDefault(film.getId(), new ArrayList<Genre>()));
             film.setLikeList(userStorage.findLikesByFilm(film.getId()).stream().toList());
         }
-
-        return filmList.stream()
-                .map(FilmMapper::mapToFilmDto)
-                .toList();
+        return filmList.stream().map(FilmMapper::mapToFilmDto).toList();
     }
+
 }
