@@ -8,9 +8,7 @@ import ru.yandex.practicum.filmorate.dto.FilmUpdateRequest;
 import ru.yandex.practicum.filmorate.model.Film;
 import ru.yandex.practicum.filmorate.service.FilmService;
 
-
 import java.util.Collection;
-
 
 @RestController
 @RequestMapping("/films")
@@ -33,8 +31,17 @@ public class FilmController {
     }
 
     @GetMapping("/popular")
-    public Collection<FilmDto> getTopFilms(@RequestParam(defaultValue = "10") Integer count) {
-        return filmService.findTop(count);
+    public Collection<FilmDto> getTopFilms(
+            @RequestParam(defaultValue = "10") Integer count,
+            @RequestParam(required = false) Long genreId,
+            @RequestParam(required = false) Integer year) {
+        return filmService.findTop(count, genreId, year);
+    }
+
+    @GetMapping("/common")
+    public Collection<FilmDto> getCommonFilms(@RequestParam Long userId,
+                                              @RequestParam Long friendId) {
+        return filmService.findCommonFilms(userId, friendId);
     }
 
     @PostMapping
@@ -57,4 +64,8 @@ public class FilmController {
         return filmService.deleteLike(id, userId);
     }
 
+    @DeleteMapping("/{filmId}")
+    public void deleteFilm(@PathVariable Long filmId) {
+        filmService.deleteFilm(filmId);
+    }
 }

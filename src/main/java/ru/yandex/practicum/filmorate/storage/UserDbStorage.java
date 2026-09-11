@@ -3,11 +3,11 @@ package ru.yandex.practicum.filmorate.storage;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.core.RowMapper;
 import org.springframework.stereotype.Repository;
+import org.springframework.transaction.annotation.Transactional;
 import ru.yandex.practicum.filmorate.model.User;
 
 import java.util.Collection;
 import java.util.Optional;
-
 
 @Repository
 public class UserDbStorage extends BaseRepository<User> implements UserStorage {
@@ -16,32 +16,44 @@ public class UserDbStorage extends BaseRepository<User> implements UserStorage {
     private static final String FIND_USER_BY_ID = "SELECT * FROM \"User\" WHERE \"User\".\"UserID\" = ?;";
     private static final String FIND_USER_FRIENDS = "SELECT \"User\".* \n" +
             "  FROM \"UserFriends\" \n" +
-            "  \t   INNER JOIN \"User\" ON \"User\".\"UserID\" = \"UserFriends\".\"UserRecipientId\" \n" +
+            "       INNER JOIN \"User\" ON \"User\".\"UserID\" = \"UserFriends\".\"UserRecipientId\" \n" +
             " WHERE \"UserFriends\".\"UserSenderId\" = ?\n" +
             " UNION ALL\n" +
             "SELECT \"User\".* \n" +
             "  FROM \"UserFriends\" \n" +
-            "  \t   INNER JOIN \"User\" ON \"User\".\"UserID\" = \"UserFriends\".\"UserSenderId\"  \n" +
+            "       INNER JOIN \"User\" ON \"User\".\"UserID\" = \"UserFriends\".\"UserSenderId\"  \n" +
             " WHERE \"UserFriends\".\"UserRecipientId\" = ? \n" +
             "   AND \"UserFriends\".\"StatusId\" = 2";
 
-    private static final String INSERT_USER = "INSERT INTO \"User\" (\"Email\",\"Login\",\"Name\",\"Birthday\") VALUES (?,?,?,?);";
+    private static final String INSERT_USER =
+            "INSERT INTO \"User\" (\"Email\",\"Login\",\"Name\",\"Birthday\") VALUES (?,?,?,?);";
 
-    private static final String UPDATE_USER = "UPDATE \"User\" SET \"Email\" = ?, \"Login\" = ?, \"Name\" = ?, \"Birthday\" = ? WHERE \"UserID\" = ?;";
+    private static final String UPDATE_USER =
+            "UPDATE \"User\" SET \"Email\" = ?, \"Login\" = ?, \"Name\" = ?, \"Birthday\" = ? " +
+                    "WHERE \"UserID\" = ?;";
 
     private static final String DELETE_USER = "DELETE FROM \"User\" WHERE \"UserID\" = ?;";
+    private static final String DELETE_USER_LIKES = "DELETE FROM \"FilmLikes\" WHERE \"UserID\" = ?;";
+    private static final String DELETE_USER_FRIENDS =
+            "DELETE FROM \"UserFriends\" " +
+                    "WHERE \"UserSenderId\" = ? OR \"UserRecipientId\" = ?;";
 
-    private static final String INSERT_FRIEND_REQUSET = "INSERT INTO \"UserFriends\" (\"UserSenderId\",\"UserRecipientId\",\"StatusId\") VALUES (?,?,1);";
+    private static final String INSERT_FRIEND_REQUSET =
+            "INSERT INTO \"UserFriends\" (\"UserSenderId\",\"UserRecipientId\",\"StatusId\") VALUES (?,?,1);";
 
-    private static final String DELETE_FRIEND = "DELETE FROM \"UserFriends\" WHERE (\"UserSenderId\" = ? AND \"UserRecipientId\" = ?) OR (\"UserRecipientId\" = ? AND \"UserSenderId\" = ?);";
+    private static final String DELETE_FRIEND =
+            "DELETE FROM \"UserFriends\" " +
+                    "WHERE (\"UserSenderId\" = ? AND \"UserRecipientId\" = ?) " +
+                    "OR (\"UserRecipientId\" = ? AND \"UserSenderId\" = ?);";
 
-    private static final String CONFIRM_FRIEND = "UPDATE \"UserFriends\" SET \"StatusId\" = 2 WHERE (\"UserSenderId\" = ? AND \"UserRecipientId\" = ?)";
+    private static final String CONFIRM_FRIEND =
+            "UPDATE \"UserFriends\" SET \"StatusId\" = 2 " +
+                    "WHERE (\"UserSenderId\" = ? AND \"UserRecipientId\" = ?)";
 
     private static final String GET_USERS_BY_FILM = " SELECT \"User\".*\n" +
             "   FROM \"User\" \n" +
-            "   \t\tINNER JOIN \"FilmLikes\" ON \"FilmLikes\".\"UserID\"  = \"User\".\"UserID\" \n" +
+            "        INNER JOIN \"FilmLikes\" ON \"FilmLikes\".\"UserID\"  = \"User\".\"UserID\" \n" +
             "  WHERE \"FilmLikes\".\"FilmId\"  = ?;";
-
 
     public UserDbStorage(JdbcTemplate jdbc, RowMapper<User> mapper) {
         super(jdbc, mapper);
@@ -76,9 +88,11 @@ public class UserDbStorage extends BaseRepository<User> implements UserStorage {
     }
 
     @Override
-    public User deleteUser(User user) {
-        delete(DELETE_USER, user.getId());
-        return user;
+    @Transactional
+    public void deleteUser(Long id) {
+        jdbc.update(DELETE_USER_LIKES, id);
+        jdbc.update(DELETE_USER_FRIENDS, id, id);
+        jdbc.update(DELETE_USER, id);
     }
 
     @Override
