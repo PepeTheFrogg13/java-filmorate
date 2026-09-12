@@ -70,7 +70,7 @@ public class DirectorDbStorageTest {
     }
 
     @Test
-    void shouldAddAndFindDirectorsByFilm() throws Exception {
+    void shouldAddAndFindDirectorsByFilm() {
         Director d1 = new Director();
         d1.setName("Дэнни Бойл");
         directorDbStorage.save(d1);
@@ -90,7 +90,7 @@ public class DirectorDbStorageTest {
     }
 
     @Test
-    void shouldRemoveDirectorsFromFilm() throws Exception {
+    void shouldRemoveDirectorsFromFilm() {
         Director d = new Director();
         d.setName("Director");
         directorDbStorage.save(d);

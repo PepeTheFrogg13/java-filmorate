@@ -64,14 +64,17 @@ public class DirectorServiceTest {
 
     @Test
     void shouldUpdateDirector() {
-        Director oldDirector = new Director();
-        oldDirector.setName("Old");
-        Director created = directorService.createDirector(oldDirector);
+        Director director = new Director();
+        director.setName("Old");
+        Director created = directorService.createDirector(director);
+        assertNotNull(created.getId());
 
-        Director newDirector = new Director();
-        newDirector.setName("New");
-        Director updated = directorService.createDirector(newDirector);
+        created.setName("New");
+
+        Director updated = directorService.updateDirector(created);
+
         assertEquals("New", updated.getName());
+        assertEquals(created.getId(), updated.getId());
     }
 
     @Test
