@@ -14,8 +14,8 @@ import java.util.List;
 @Repository
 public class EventDbStorage extends BaseRepository<Event> implements EventStorage {
 
-    private static final String GET_EVENTS = "SELECT * FROM events WHERE user_id IN (%s) ORDER BY timestamp DESC, " +
-            "event_id DESC";
+    private static final String GET_EVENTS = "SELECT * FROM events WHERE user_id IN (%s) ORDER BY timestamp ASC, " +
+            "event_id ASC";
 
     private static final String ADD_EVENT = "INSERT INTO events (timestamp, user_id, event_type, operation, " +
             "entity_id) VALUES(?, ?, ?, ?, ?)";
