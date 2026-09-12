@@ -172,4 +172,20 @@ public class FilmService {
         return filmList.stream().map(FilmMapper::mapToFilmDto).toList();
     }
 
+    public Collection<FilmDto> getRecommendations(Long userId) {
+        if (userStorage.getUserById(userId).isEmpty()) {
+            throw new IdNotFoundException("Пользователь с id = " + userId + " не найден");
+        }
+
+        List<Film> filmList = filmStorage.findRecommendations(userId).stream().toList();
+        Map<Long, List> filmGenres = filmGenreStorage.getFilmGenres();
+
+        for (Film film : filmList) {
+            film.setGenreList(filmGenres.getOrDefault(film.getId(), new ArrayList<Genre>()));
+            film.setLikeList(userStorage.findLikesByFilm(film.getId()).stream().toList());
+        }
+
+        return filmList.stream().map(FilmMapper::mapToFilmDto).toList();
+    }
+
 }

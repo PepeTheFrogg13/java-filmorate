@@ -2,10 +2,12 @@ package ru.yandex.practicum.filmorate.controller;
 
 import jakarta.validation.Valid;
 import org.springframework.web.bind.annotation.*;
+import ru.yandex.practicum.filmorate.dto.FilmDto;
 import ru.yandex.practicum.filmorate.dto.UserDto;
 import ru.yandex.practicum.filmorate.dto.UserNewRequest;
 import ru.yandex.practicum.filmorate.dto.UserUpdateRequest;
 import ru.yandex.practicum.filmorate.model.User;
+import ru.yandex.practicum.filmorate.service.FilmService;
 import ru.yandex.practicum.filmorate.service.UserService;
 
 import java.util.Collection;
@@ -15,9 +17,11 @@ import java.util.Collection;
 public class UserController {
 
     private final UserService userService;
+    private final FilmService filmService;
 
-    public UserController(UserService userService) {
+    public UserController(UserService userService, FilmService filmService) {
         this.userService = userService;
+        this.filmService = filmService;
     }
 
     @GetMapping
@@ -33,6 +37,11 @@ public class UserController {
     @GetMapping("/{id}/friends")
     public Collection<User> getUserFriends(@PathVariable Long id) {
         return userService.getFriends(id);
+    }
+
+    @GetMapping("/{id}/recommendations")
+    public Collection<FilmDto> getRecommendations(@PathVariable Long id) {
+        return filmService.getRecommendations(id);
     }
 
     @GetMapping("/{id}/friends/common/{friendId}")
