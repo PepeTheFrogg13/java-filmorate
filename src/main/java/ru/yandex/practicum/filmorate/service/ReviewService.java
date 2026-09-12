@@ -7,9 +7,12 @@ import ru.yandex.practicum.filmorate.dto.ReviewUpdateRequest;
 import ru.yandex.practicum.filmorate.exceptions.IdNotFoundException;
 import ru.yandex.practicum.filmorate.mappers.ReviewMapper;
 import ru.yandex.practicum.filmorate.model.Film;
+import ru.yandex.practicum.filmorate.model.EventType;
+import ru.yandex.practicum.filmorate.model.Operation;
 import ru.yandex.practicum.filmorate.model.Review;
 import ru.yandex.practicum.filmorate.model.User;
 import ru.yandex.practicum.filmorate.storage.FilmStorage;
+import ru.yandex.practicum.filmorate.storage.EventStorage;
 import ru.yandex.practicum.filmorate.storage.ReviewStorage;
 import ru.yandex.practicum.filmorate.storage.UserStorage;
 
@@ -20,15 +23,18 @@ import java.util.Optional;
 public class ReviewService {
 
     private final ReviewStorage reviewStorage;
+    private final EventStorage eventStorage;
     private final UserStorage userStorage;
     private final FilmStorage filmStorage;
 
     public ReviewService(ReviewStorage reviewStorage,
                          UserStorage userStorage,
-                         FilmStorage filmStorage) {
+                         FilmStorage filmStorage,
+                         EventStorage eventStorage) {
         this.reviewStorage = reviewStorage;
         this.userStorage = userStorage;
         this.filmStorage = filmStorage;
+        this.eventStorage = eventStorage;
     }
 
     public ReviewDto createReview(ReviewNewRequest request) {
@@ -39,6 +45,7 @@ public class ReviewService {
         review.setUseful(0);
 
         Review created = reviewStorage.createReview(review);
+        eventStorage.addEvent(review.getUserId(), EventType.REVIEW, Operation.ADD, created.getReviewId());
         return ReviewMapper.mapToReviewDto(created);
     }
 
@@ -53,9 +60,11 @@ public class ReviewService {
         review.setIsPositive(request.getIsPositive());
 
         Optional<Review> updated = reviewStorage.updateReview(review);
-        return ReviewMapper.mapToReviewDto(updated.orElseThrow(
+        Review result = updated.orElseThrow(
                 () -> new IdNotFoundException("Отзыв с id = " + request.getReviewId() + " не найден")
-        ));
+        );
+        eventStorage.addEvent(result.getUserId(), EventType.REVIEW, Operation.UPDATE, result.getReviewId());
+        return ReviewMapper.mapToReviewDto(result);
     }
 
     public ReviewDto deleteReview(Long reviewId) {
@@ -65,6 +74,7 @@ public class ReviewService {
         }
 
         Review deleted = reviewStorage.deleteReview(reviewId);
+        eventStorage.addEvent(deleted.getUserId(), EventType.REVIEW, Operation.REMOVE, deleted.getReviewId());
         return ReviewMapper.mapToReviewDto(deleted);
     }
 

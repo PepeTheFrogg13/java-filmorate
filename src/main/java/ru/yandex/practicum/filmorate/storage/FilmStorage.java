@@ -16,7 +16,7 @@ public interface FilmStorage {
 
     Optional<Film> updateFilm(Film film);
 
-    void deleteFilm(Long id);
+    Film deleteFilm(Film film);
 
     Optional<Film> changeLikes(Long id, Long userId, Boolean remove);
 
@@ -25,6 +25,5 @@ public interface FilmStorage {
     Collection<Film> findTopLikes(Integer top, Long genreId, Integer year);
 
     Collection<Film> findRecommendations(Long userId);
-
 
 }

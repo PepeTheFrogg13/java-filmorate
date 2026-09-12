@@ -17,9 +17,10 @@ public interface UserStorage {
 
     Optional<User> updateUser(User user);
 
-    void deleteUser(Long id);
+    User deleteUser(User user);
 
     Optional<User> changeFriend(Long id, Long friendId, Integer option);
 
     Collection<User> findLikesByFilm(Long id);
+
 }

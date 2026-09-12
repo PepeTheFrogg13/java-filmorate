@@ -5,11 +5,17 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.jdbc.AutoConfigureTestDatabase;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.transaction.annotation.Transactional;
+import ru.yandex.practicum.filmorate.dto.EventDto;
 import ru.yandex.practicum.filmorate.dto.ReviewDto;
 import ru.yandex.practicum.filmorate.dto.ReviewNewRequest;
 import ru.yandex.practicum.filmorate.dto.ReviewUpdateRequest;
 import ru.yandex.practicum.filmorate.exceptions.IdNotFoundException;
+import ru.yandex.practicum.filmorate.model.Event;
+import ru.yandex.practicum.filmorate.model.EventType;
+import ru.yandex.practicum.filmorate.model.Operation;
+import ru.yandex.practicum.filmorate.service.EventService;
+import ru.yandex.practicum.filmorate.storage.EventStorage;
+import org.springframework.transaction.annotation.Transactional;
 import ru.yandex.practicum.filmorate.model.User;
 import ru.yandex.practicum.filmorate.service.ReviewService;
 import ru.yandex.practicum.filmorate.storage.UserDbStorage;
@@ -28,6 +34,8 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 class FilmoRateApplicationTests {
 
     private final UserDbStorage userStorage;
+    private final EventStorage eventStorage;
+    private final EventService eventService;
     private final ReviewService reviewService;
 
     @Test
@@ -47,6 +55,49 @@ class FilmoRateApplicationTests {
         Collection<User> users = userStorage.findAll();
         assertThat(users.size()).isEqualTo(3);
 
+    }
+
+    @Test
+    public void testAddAndGetEvent() {
+        eventStorage.addEvent(2L, EventType.LIKE, Operation.ADD, 1L);
+
+        List<Event> events = eventStorage.getEventsByUserIds(List.of(2L));
+
+        assertThat(events).anySatisfy(event -> {
+                    assertThat(event.getUserId()).isEqualTo(2L);
+                    assertThat(event.getEventType()).isEqualTo(EventType.LIKE);
+                    assertThat(event.getOperation()).isEqualTo(Operation.ADD);
+                    assertThat(event.getEntityId()).isEqualTo(1L);
+                });
+    }
+
+    @Test
+    public void testFeedContainsFriendEvent() {
+        eventStorage.addEvent(2L, EventType.LIKE, Operation.ADD, 1L);
+
+        Collection<EventDto> feed = eventService.getFeed(3L);
+
+        assertThat(feed).anySatisfy(event -> {
+                    assertThat(event.getUserId()).isEqualTo(2L);
+                    assertThat(event.getEventType()).isEqualTo(EventType.LIKE);
+                    assertThat(event.getOperation()).isEqualTo(Operation.ADD);
+                    assertThat(event.getEntityId()).isEqualTo(1L);
+                });
+    }
+
+    @Test
+    void testFeedContainsFriendReviewEvent() {
+        ReviewDto review = reviewService.createReview(
+                newReview("Отзыв друга", true, 2L, 1L));
+
+        Collection<EventDto> feed = eventService.getFeed(3L);
+
+        assertThat(feed).anySatisfy(event -> {
+            assertThat(event.getUserId()).isEqualTo(2L);
+            assertThat(event.getEventType()).isEqualTo(EventType.REVIEW);
+            assertThat(event.getOperation()).isEqualTo(Operation.ADD);
+            assertThat(event.getEntityId()).isEqualTo(review.getReviewId());
+        });
     }
 
     @Test

@@ -9,7 +9,10 @@ import ru.yandex.practicum.filmorate.dto.UserUpdateRequest;
 import ru.yandex.practicum.filmorate.exceptions.IdNotFoundException;
 import ru.yandex.practicum.filmorate.exceptions.ValidationException;
 import ru.yandex.practicum.filmorate.mappers.UserMapper;
+import ru.yandex.practicum.filmorate.model.EventType;
+import ru.yandex.practicum.filmorate.model.Operation;
 import ru.yandex.practicum.filmorate.model.User;
+import ru.yandex.practicum.filmorate.storage.EventStorage;
 import ru.yandex.practicum.filmorate.storage.UserStorage;
 
 import java.util.Collection;
@@ -22,13 +25,17 @@ public class UserService {
 
     private final Logger log = LoggerFactory.getLogger(UserService.class);
 
+    private final EventStorage eventStorage;
+
     private final UserStorage userStorage;
 
-    public UserService(UserStorage userStorage) {
+    public UserService(EventStorage eventStorage, UserStorage userStorage) {
+        this.eventStorage = eventStorage;
         this.userStorage = userStorage;
     }
 
     public void validate(User user) {
+
         if (user.getLogin().contains(" ") || user.getLogin().isBlank()) {
             String message = "Логин не может быть пустым и содержать пробелы";
             throw new ValidationException(message);
@@ -47,15 +54,16 @@ public class UserService {
         Optional<User> userOptional = userStorage.getUserById(id);
         if (userOptional.isEmpty()) {
             throw new IdNotFoundException("Пользователь с id = " + id + " не найден");
+        } else {
+            return UserMapper.mapToUserDto(userOptional.get());
         }
-        return UserMapper.mapToUserDto(userOptional.get());
     }
 
     public User createUser(UserNewRequest userNewRequest) {
         User user = UserMapper.mapToUser(userNewRequest);
         validate(user);
         User newUser = userStorage.createUser(user);
-        log.info("Добавлен пользователь с id = {}", newUser.getId());
+        log.info("Добавлен пользователь с id = " + newUser.getId());
         return newUser;
     }
 
@@ -66,18 +74,8 @@ public class UserService {
         if (userOptional.isEmpty()) {
             throw new IdNotFoundException("Пользователь с id = " + user.getId() + " не найден");
         }
-
-        log.info("Обновлён пользователь с id = {}", user.getId());
+        log.info("Обновлён пользователь с id = " + user.getId());
         return userStorage.updateUser(user).get();
-    }
-
-    public void deleteUser(Long userId) {
-        if (userStorage.getUserById(userId).isEmpty()) {
-            throw new IdNotFoundException("Пользователь с id = " + userId + " не найден");
-        }
-
-        userStorage.deleteUser(userId);
-        log.info("Удалён пользователь с id = {}", userId);
     }
 
     public User addFriend(Long id, Long friendId) {
@@ -89,7 +87,13 @@ public class UserService {
         if (userOptional.isEmpty()) {
             throw new IdNotFoundException("Пользователь с id = " + friendId + " не найден");
         }
-        return userStorage.changeFriend(id, friendId, 1).get();
+
+        User user = userStorage.changeFriend(id, friendId,1)
+                .orElseThrow(() -> new ValidationException("Не удалось добавить пользователя в друзья"));
+
+        eventStorage.addEvent(id, EventType.FRIEND, Operation.ADD, friendId);
+
+        return user;
     }
 
     public User deleteFriend(Long id, Long friendId) {
@@ -101,7 +105,13 @@ public class UserService {
         if (userOptional.isEmpty()) {
             throw new IdNotFoundException("Пользователь с id = " + friendId + " не найден");
         }
-        return userStorage.changeFriend(id, friendId, 2).get();
+
+        User user = userStorage.changeFriend(id, friendId, 2)
+                        .orElseThrow(() -> new ValidationException("Не удалось удалить пользователя из друзей"));
+
+        eventStorage.addEvent(id, EventType.FRIEND, Operation.REMOVE, friendId);
+
+        return user;
     }
 
     public User confirmFriend(Long id, Long friendId) {
@@ -115,6 +125,7 @@ public class UserService {
         }
         return userStorage.changeFriend(id, friendId, 3).get();
     }
+
 
     public Collection<User> getFriends(Long id) {
         Optional<User> userOptional = userStorage.getUserById(id);
@@ -133,12 +144,8 @@ public class UserService {
         if (userOptional.isEmpty()) {
             throw new IdNotFoundException("Пользователь с id = " + friendId + " не найден");
         }
-
-        HashSet<Long> list1 = new HashSet<>(
-                userStorage.findFriends(id).stream().map(User::getId).toList());
-        HashSet<Long> list2 = new HashSet<>(
-                userStorage.findFriends(friendId).stream().map(User::getId).toList());
-
+        HashSet<Long> list1 = new HashSet<>(userStorage.findFriends(id).stream().map(User::getId).toList());
+        HashSet<Long> list2 = new HashSet<>(userStorage.findFriends(friendId).stream().map(User::getId).toList());
         List<Long> intersection = list1.stream()
                 .filter(list2::contains)
                 .toList();
@@ -146,4 +153,5 @@ public class UserService {
                 .filter(u -> intersection.contains(u.getId()))
                 .toList();
     }
+
 }
