@@ -1,6 +1,5 @@
 package ru.yandex.practicum.filmorate;
 
-import lombok.RequiredArgsConstructor;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.jdbc.AutoConfigureTestDatabase;
@@ -17,10 +16,14 @@ import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
 
 @SpringBootTest
 @AutoConfigureTestDatabase
-@RequiredArgsConstructor(onConstructor_ = @Autowired)
 class FilmoRateApplicationTests {
 
     private final UserDbStorage userStorage;
+
+    @Autowired
+    public FilmoRateApplicationTests(UserDbStorage userStorage) {
+        this.userStorage = userStorage;
+    }
 
     @Test
     public void testFindUserById() {
@@ -38,6 +41,5 @@ class FilmoRateApplicationTests {
 
         Collection<User> users = userStorage.findAll();
         assertThat(users.size()).isEqualTo(3);
-
     }
 }
