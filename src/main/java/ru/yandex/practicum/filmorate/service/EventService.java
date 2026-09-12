@@ -9,8 +9,10 @@ import ru.yandex.practicum.filmorate.model.User;
 import ru.yandex.practicum.filmorate.storage.EventStorage;
 import ru.yandex.practicum.filmorate.storage.UserStorage;
 
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
+import java.util.stream.Collectors;
 
 @Service
 public class EventService {
@@ -27,15 +29,13 @@ public class EventService {
         userStorage.getUserById(userId)
                 .orElseThrow(() -> new IdNotFoundException("Пользователь с id = " + userId + " не найден"));
 
-        List<Long> friendIds = userStorage.findFriends(userId).stream()
+        List<Long> feedUserIds = userStorage.findFriends(userId).stream()
                 .map(User::getId)
-                .toList();
+                .collect(Collectors.toCollection(ArrayList::new));
 
-        if (friendIds.isEmpty()) {
-            return List.of();
-        }
+        feedUserIds.add(userId);
 
-        List<Event> events = eventStorage.getEventsByUserIds(friendIds);
+        List<Event> events = eventStorage.getEventsByUserIds(feedUserIds);
 
         return events.stream()
                 .map(EventMapper::mapToEventDto)
