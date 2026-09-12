@@ -3,6 +3,7 @@ package ru.yandex.practicum.filmorate.storage;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.core.RowMapper;
 import org.springframework.stereotype.Repository;
+import org.springframework.transaction.annotation.Transactional;
 import ru.yandex.practicum.filmorate.exceptions.IdNotFoundException;
 import ru.yandex.practicum.filmorate.model.Film;
 import ru.yandex.practicum.filmorate.model.Genre;
@@ -25,7 +26,9 @@ public class FilmDbStorage extends BaseRepository<Film> implements FilmStorage {
     private static final String UPDATE_FILM = "UPDATE \"Film\" SET \"Name\" = ?, \"Description\" = ?, \"ReleaseDate\" = ?, \"Duration\" = ? WHERE \"FilmId\" = ?;";
 
     private static final String DELETE_FILM = "DELETE FROM \"Film\" WHERE \"Film\".\"FilmId\" = ?;";
+    private static final String DELETE_FILM_GENRES = "DELETE FROM \"FilmGenre\" WHERE \"FilmId\" = ?;";
     private static final String DELETE_FILM_GENRE = "DELETE FROM \"FilmGenre\" WHERE \"FilmId\" = ? AND \"GenreId\" = ?;";
+    private static final String DELETE_FILM_LIKES = "DELETE FROM \"FilmLikes\" WHERE \"FilmId\" = ?;";
 
     private static final String INSERT_LIKE = "MERGE INTO \"FilmLikes\" (\"FilmId\",\"UserID\") KEY (\"FilmId\",\"UserID\") VALUES (?,?);";
     private static final String DELETE_LIKE = "DELETE FROM \"FilmLikes\" WHERE \"FilmId\" = ? AND \"UserID\" = ?;";
@@ -88,9 +91,11 @@ public class FilmDbStorage extends BaseRepository<Film> implements FilmStorage {
     }
 
     @Override
-    public Film deleteFilm(Film film) {
-        delete(DELETE_FILM, film.getId());
-        return film;
+    @Transactional
+    public void deleteFilm(Long id) {
+        jdbc.update(DELETE_FILM_LIKES, id);
+        jdbc.update(DELETE_FILM_GENRES, id);
+        jdbc.update(DELETE_FILM, id);
     }
 
     @Override
