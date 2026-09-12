@@ -73,6 +73,29 @@ CREATE TABLE IF NOT EXISTS "FilmLikes" (
 )
     );
 
+CREATE TABLE IF NOT EXISTS "Review" (
+    "ReviewId" INTEGER NOT NULL AUTO_INCREMENT,
+    "Content" VARCHAR(2000) NOT NULL,
+    "IsPositive" BOOLEAN NOT NULL,
+    "UserID" INTEGER NOT NULL,
+    "FilmId" INTEGER NOT NULL,
+    "Useful" INTEGER NOT NULL DEFAULT 0,
+    CONSTRAINT "pk_Review" PRIMARY KEY ("ReviewId"),
+    CONSTRAINT "fk_Review_UserID" FOREIGN KEY ("UserID") REFERENCES "User" ("UserID"),
+    CONSTRAINT "fk_Review_FilmId" FOREIGN KEY ("FilmId") REFERENCES "Film" ("FilmId")
+    );
+
+CREATE TABLE IF NOT EXISTS "ReviewLikes" (
+    "ReviewLikesId" INTEGER NOT NULL AUTO_INCREMENT,
+    "ReviewId" INTEGER NOT NULL,
+    "UserID" INTEGER NOT NULL,
+    "IsLike" BOOLEAN NOT NULL,
+    CONSTRAINT "pk_ReviewLikes" PRIMARY KEY ("ReviewLikesId"),
+    CONSTRAINT "fk_ReviewLikes_ReviewId" FOREIGN KEY ("ReviewId") REFERENCES "Review" ("ReviewId") ON DELETE CASCADE,
+    CONSTRAINT "fk_ReviewLikes_UserID" FOREIGN KEY ("UserID") REFERENCES "User" ("UserID") ON DELETE CASCADE,
+    CONSTRAINT "uq_ReviewLikes_ReviewUser" UNIQUE ("ReviewId", "UserID")
+    );
+
 ALTER TABLE "UserFriends" ADD CONSTRAINT IF NOT EXISTS "fk_UserFriends_UserSenderId" FOREIGN KEY("UserSenderId")
     REFERENCES "User" ("UserID");
 
