@@ -22,5 +22,4 @@ public interface UserStorage {
     Optional<User> changeFriend(Long id, Long friendId, Integer option);
 
     Collection<User> findLikesByFilm(Long id);
-
 }

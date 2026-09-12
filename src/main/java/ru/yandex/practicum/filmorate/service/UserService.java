@@ -22,7 +22,6 @@ public class UserService {
 
     private final Logger log = LoggerFactory.getLogger(UserService.class);
 
-
     private final UserStorage userStorage;
 
     public UserService(UserStorage userStorage) {
@@ -30,7 +29,6 @@ public class UserService {
     }
 
     public void validate(User user) {
-
         if (user.getLogin().contains(" ") || user.getLogin().isBlank()) {
             String message = "Логин не может быть пустым и содержать пробелы";
             throw new ValidationException(message);
@@ -49,16 +47,15 @@ public class UserService {
         Optional<User> userOptional = userStorage.getUserById(id);
         if (userOptional.isEmpty()) {
             throw new IdNotFoundException("Пользователь с id = " + id + " не найден");
-        } else {
-            return UserMapper.mapToUserDto(userOptional.get());
         }
+        return UserMapper.mapToUserDto(userOptional.get());
     }
 
     public User createUser(UserNewRequest userNewRequest) {
         User user = UserMapper.mapToUser(userNewRequest);
         validate(user);
         User newUser = userStorage.createUser(user);
-        log.info("Добавлен пользователь с id = " + newUser.getId());
+        log.info("Добавлен пользователь с id = {}", newUser.getId());
         return newUser;
     }
 
@@ -69,7 +66,8 @@ public class UserService {
         if (userOptional.isEmpty()) {
             throw new IdNotFoundException("Пользователь с id = " + user.getId() + " не найден");
         }
-        log.info("Обновлён пользователь с id = " + user.getId());
+
+        log.info("Обновлён пользователь с id = {}", user.getId());
         return userStorage.updateUser(user).get();
     }
 
@@ -77,8 +75,9 @@ public class UserService {
         if (userStorage.getUserById(userId).isEmpty()) {
             throw new IdNotFoundException("Пользователь с id = " + userId + " не найден");
         }
+
         userStorage.deleteUser(userId);
-        log.info("Удалён пользователь с id = " + userId);
+        log.info("Удалён пользователь с id = {}", userId);
     }
 
     public User addFriend(Long id, Long friendId) {
@@ -117,7 +116,6 @@ public class UserService {
         return userStorage.changeFriend(id, friendId, 3).get();
     }
 
-
     public Collection<User> getFriends(Long id) {
         Optional<User> userOptional = userStorage.getUserById(id);
         if (userOptional.isEmpty()) {
@@ -135,8 +133,12 @@ public class UserService {
         if (userOptional.isEmpty()) {
             throw new IdNotFoundException("Пользователь с id = " + friendId + " не найден");
         }
-        HashSet<Long> list1 = new HashSet<>(userStorage.findFriends(id).stream().map(User::getId).toList());
-        HashSet<Long> list2 = new HashSet<>(userStorage.findFriends(friendId).stream().map(User::getId).toList());
+
+        HashSet<Long> list1 = new HashSet<>(
+                userStorage.findFriends(id).stream().map(User::getId).toList());
+        HashSet<Long> list2 = new HashSet<>(
+                userStorage.findFriends(friendId).stream().map(User::getId).toList());
+
         List<Long> intersection = list1.stream()
                 .filter(list2::contains)
                 .toList();
@@ -144,5 +146,4 @@ public class UserService {
                 .filter(u -> intersection.contains(u.getId()))
                 .toList();
     }
-
 }

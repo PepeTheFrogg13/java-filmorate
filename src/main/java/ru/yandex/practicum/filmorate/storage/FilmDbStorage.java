@@ -9,6 +9,7 @@ import ru.yandex.practicum.filmorate.model.Film;
 import ru.yandex.practicum.filmorate.model.Genre;
 
 
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
@@ -110,6 +111,40 @@ public class FilmDbStorage extends BaseRepository<Film> implements FilmStorage {
     @Override
     public Collection<Film> findTopLikes(Integer top) {
         return findMany(FIND_TOP_LIKES, top);
+    }
+
+    @Override
+    public Collection<Film> findTopLikes(Integer top, Long genreId, Integer year) {
+        StringBuilder query = new StringBuilder(
+                "SELECT f.*, r.\"Name\" AS \"RatingName\" " +
+                        "FROM \"Film\" f " +
+                        "LEFT JOIN \"Rating\" r ON r.\"RatingId\" = f.\"RatingId\" " +
+                        "LEFT JOIN (" +
+                        "    SELECT \"FilmId\", COUNT(*) AS likes_count " +
+                        "    FROM \"FilmLikes\" " +
+                        "    GROUP BY \"FilmId\"" +
+                        ") lc ON lc.\"FilmId\" = f.\"FilmId\" " +
+                        "WHERE 1 = 1 ");
+
+        List<Object> params = new ArrayList<>();
+
+        if (genreId != null) {
+            query.append("AND EXISTS (" +
+                    "SELECT 1 FROM \"FilmGenre\" fg " +
+                    "WHERE fg.\"FilmId\" = f.\"FilmId\" AND fg.\"GenreId\" = ?" +
+                    ") ");
+            params.add(genreId);
+        }
+
+        if (year != null) {
+            query.append("AND EXTRACT(YEAR FROM f.\"ReleaseDate\") = ? ");
+            params.add(year);
+        }
+
+        query.append("ORDER BY COALESCE(lc.likes_count, 0) DESC, f.\"FilmId\" ASC LIMIT ?;");
+        params.add(top);
+
+        return findMany(query.toString(), params.toArray());
     }
 
 

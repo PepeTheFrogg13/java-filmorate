@@ -159,12 +159,14 @@ public class FilmService {
     }
 
     public Collection<FilmDto> findTop(Integer top) {
+        return findTop(top, null, null);
+    }
+
+    public Collection<FilmDto> findTop(Integer top, Long genreId, Integer year) {
         Map<Long, List> filmGenres = filmGenreStorage.getFilmGenres();
-        List<Film> filmList = filmStorage.findTopLikes(top).stream().toList();
+        List<Film> filmList = filmStorage.findTopLikes(top, genreId, year).stream().toList();
         for (Film film : filmList) {
-            film.setGenreList(filmGenres.get(film.getId()));
-        }
-        for (Film film : filmList) {
+            film.setGenreList(filmGenres.getOrDefault(film.getId(), new ArrayList<Genre>()));
             film.setLikeList(userStorage.findLikesByFilm(film.getId()).stream().toList());
         }
         return filmList.stream().map(FilmMapper::mapToFilmDto).toList();
