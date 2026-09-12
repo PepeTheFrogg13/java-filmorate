@@ -123,12 +123,8 @@ public class FilmService {
         return FilmMapper.mapToFilmDto(film);
     }
 
-    public void deleteFilm(Long filmId) {
-        if (filmStorage.getFilmById(filmId).isEmpty()) {
-            throw new IdNotFoundException("Фильм с id = " + filmId + " не найден");
-        }
-        filmStorage.deleteFilm(filmId);
-        log.info("Удалён фильм с id = " + filmId);
+    public Film deleteFilm(Film film) {
+        return filmStorage.deleteFilm(film);
     }
 
     public Film addLike(Long id, Long userId) {
@@ -163,14 +159,12 @@ public class FilmService {
     }
 
     public Collection<FilmDto> findTop(Integer top) {
-        return findTop(top, null, null);
-    }
-
-    public Collection<FilmDto> findTop(Integer top, Long genreId, Integer year) {
         Map<Long, List> filmGenres = filmGenreStorage.getFilmGenres();
-        List<Film> filmList = filmStorage.findTopLikes(top, genreId, year).stream().toList();
+        List<Film> filmList = filmStorage.findTopLikes(top).stream().toList();
         for (Film film : filmList) {
-            film.setGenreList(filmGenres.getOrDefault(film.getId(), new ArrayList<Genre>()));
+            film.setGenreList(filmGenres.get(film.getId()));
+        }
+        for (Film film : filmList) {
             film.setLikeList(userStorage.findLikesByFilm(film.getId()).stream().toList());
         }
         return filmList.stream().map(FilmMapper::mapToFilmDto).toList();

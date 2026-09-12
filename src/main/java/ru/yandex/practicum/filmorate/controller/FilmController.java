@@ -33,11 +33,8 @@ public class FilmController {
     }
 
     @GetMapping("/popular")
-    public Collection<FilmDto> getTopFilms(
-            @RequestParam(defaultValue = "10") Integer count,
-            @RequestParam(required = false) Long genreId,
-            @RequestParam(required = false) Integer year) {
-        return filmService.findTop(count, genreId, year);
+    public Collection<FilmDto> getTopFilms(@RequestParam(defaultValue = "10") Integer count) {
+        return filmService.findTop(count);
     }
 
     @PostMapping
@@ -58,11 +55,6 @@ public class FilmController {
     @DeleteMapping("/{id}/like/{userId}")
     public Film dislikeFilm(@PathVariable Long id, @PathVariable Long userId) {
         return filmService.deleteLike(id, userId);
-    }
-
-    @DeleteMapping("/{filmId}")
-    public void deleteFilm(@PathVariable Long filmId) {
-        filmService.deleteFilm(filmId);
     }
 
 }
