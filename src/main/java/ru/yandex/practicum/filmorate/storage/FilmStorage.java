@@ -16,11 +16,13 @@ public interface FilmStorage {
 
     Optional<Film> updateFilm(Film film);
 
-    Film deleteFilm(Film film);
+    void deleteFilm(Long id);
 
     Optional<Film> changeLikes(Long id, Long userId, Boolean remove);
 
     Collection<Film> findTopLikes(Integer top);
+
+    Collection<Film> findTopLikes(Integer top, Long genreId, Integer year);
 
 
 }
