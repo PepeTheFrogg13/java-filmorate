@@ -10,7 +10,10 @@ import ru.yandex.practicum.filmorate.dto.GenreInsert;
 import ru.yandex.practicum.filmorate.exceptions.IdNotFoundException;
 import ru.yandex.practicum.filmorate.exceptions.ValidationException;
 import ru.yandex.practicum.filmorate.mappers.FilmMapper;
-import ru.yandex.practicum.filmorate.model.*;
+import ru.yandex.practicum.filmorate.model.Film;
+import ru.yandex.practicum.filmorate.model.Genre;
+import ru.yandex.practicum.filmorate.model.Rating;
+import ru.yandex.practicum.filmorate.model.User;
 import ru.yandex.practicum.filmorate.storage.*;
 
 import java.time.LocalDate;
@@ -28,20 +31,17 @@ public class FilmService {
     private final RatingStorage ratingStorage;
     private final GenreStorage genreStorage;
     private final FilmGenreStorage filmGenreStorage;
-    private final DirectorService directorService;
 
 
     public FilmService(FilmStorage filmStorage,
                        RatingStorage ratingStorage,
                        GenreStorage genreStorage,
-                       UserStorage userStorage, FilmGenreStorage filmGenreStorage,
-                       DirectorService directorService) {
+                       UserStorage userStorage, FilmGenreStorage filmGenreStorage) {
         this.filmStorage = filmStorage;
         this.ratingStorage = ratingStorage;
         this.genreStorage = genreStorage;
         this.userStorage = userStorage;
         this.filmGenreStorage = filmGenreStorage;
-        this.directorService = directorService;
     }
 
     public void validate(Film film) {
@@ -84,7 +84,6 @@ public class FilmService {
             throw new IdNotFoundException("Рейтинг с id = " + filmNewRequest.getMpa().getId() + " не найден");
         }
         newFilm.setRating(ratingOptional.get());
-
         for (Long id : filmNewRequest.getGenres().stream().map(GenreInsert::getId).toList()) {
             Optional<Genre> genreOptional = genreStorage.findById(id);
             if (genreOptional.isEmpty()) {
@@ -93,17 +92,7 @@ public class FilmService {
                 newFilm.getGenreList().add(genreOptional.get());
             }
         }
-        if (filmNewRequest.getDirectors() != null && !filmNewRequest.getDirectors().isEmpty()) {
-            Set<Director> directors = new HashSet<>();
-            for (var directorDto : filmNewRequest.getDirectors()) {
-                Long directorId = directorDto.getId();
-                Director director = directorService.getDirectorById(directorId);
-                directors.add(director);
-            }
-            newFilm.setDirectors(directors);
-        }
-
-        filmStorage.createFilm(newFilm);
+        filmStorage.createFilm(newFilm).getId();
         log.info("Создан фильм с id = " + newFilm.getId());
         return FilmMapper.mapToFilmDto(newFilm);
     }
@@ -131,16 +120,6 @@ public class FilmService {
             } else {
                 film.getGenreList().add(genreOptional.get());
             }
-        }
-
-        if (filmUpdateRequest.getDirectors() != null && !filmUpdateRequest.getDirectors().isEmpty()) {
-            Set<Director> directors = new HashSet<>();
-            for (var directorDto : filmUpdateRequest.getDirectors()) {
-                Long directorId = directorDto.getId();
-                Director director = directorService.getDirectorById(directorId);
-                directors.add(director);
-            }
-            film.setDirectors(directors);
         }
         return FilmMapper.mapToFilmDto(film);
     }
@@ -189,13 +168,4 @@ public class FilmService {
         return filmList.stream().map(FilmMapper::mapToFilmDto).toList();
     }
 
-    public List<FilmDto> getFilmsByDirector(Long directorId, String sortBy) {
-        directorService.getDirectorById(directorId);
-
-        if (!"year".equalsIgnoreCase(sortBy) && !"likes".equalsIgnoreCase(sortBy)) {
-            throw new ValidationException("Параметр sortBy должен быть 'year' или 'likes'");
-        }
-        List<Film> films = filmStorage.getFilmsByDirector(directorId, sortBy);
-        return films.stream().map(FilmMapper::mapToFilmDto).toList();
-    }
 }

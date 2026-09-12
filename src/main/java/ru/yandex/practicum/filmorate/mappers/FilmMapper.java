@@ -10,7 +10,6 @@ import ru.yandex.practicum.filmorate.model.Rating;
 
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.util.HashSet;
 
 
 @Component
@@ -41,7 +40,6 @@ public class FilmMapper implements RowMapper<Film> {
         filmDto.setMpa(film.getRating());
         filmDto.setGenres(film.getGenreList());
         filmDto.setLikeList(film.getLikeList());
-        filmDto.setDirectors(film.getDirectors());
         return filmDto;
     }
 
@@ -51,10 +49,6 @@ public class FilmMapper implements RowMapper<Film> {
         film.setDescription(filmNewRequest.getDescription());
         film.setDuration(filmNewRequest.getDuration());
         film.setReleaseDate(filmNewRequest.getReleaseDate());
-
-        if (filmNewRequest.getDirectors() != null && !filmNewRequest.getDirectors().isEmpty()) {
-            film.setDirectors(new HashSet<>(filmNewRequest.getDirectors()));
-        }
         return film;
     }
 
@@ -65,10 +59,6 @@ public class FilmMapper implements RowMapper<Film> {
         film.setDescription(filmUpdateRequest.getDescription());
         film.setDuration(filmUpdateRequest.getDuration());
         film.setReleaseDate(filmUpdateRequest.getReleaseDate());
-
-        if (filmUpdateRequest.getDirectors() != null && !filmUpdateRequest.getDirectors().isEmpty()) {
-            film.setDirectors(new HashSet<>(filmUpdateRequest.getDirectors()));
-        }
         return film;
     }
 }
