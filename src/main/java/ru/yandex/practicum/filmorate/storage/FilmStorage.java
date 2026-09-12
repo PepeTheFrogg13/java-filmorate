@@ -22,5 +22,8 @@ public interface FilmStorage {
 
     Collection<Film> findTopLikes(Integer top);
 
+    Collection<Film> findTopLikes(Integer top, Long genreId, Integer year);
+
+    Collection<Film> findRecommendations(Long userId);
 
 }

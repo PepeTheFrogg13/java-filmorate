@@ -9,6 +9,7 @@ import ru.yandex.practicum.filmorate.model.Genre;
 
 
 import java.util.Collection;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
@@ -39,6 +40,31 @@ public class FilmDbStorage extends BaseRepository<Film> implements FilmStorage {
             "                GROUP BY \"FilmLikes\".\"FilmId\") TAB_FILM_LIKES ON TAB_FILM_LIKES.\"FilmId\" = \"Film\".\"FilmId\" \n" +
             " ORDER BY TAB_FILM_LIKES.FILMLIKESCOUNT  DESC    \n" +
             "  LIMIT ?;";
+
+    private static final String FIND_RECOMMENDATIONS =
+            "WITH similar_user AS (" +
+                    "SELECT other_likes.\"UserID\" AS similar_user_id, COUNT(*) AS common_likes " +
+                    "FROM \"FilmLikes\" user_likes " +
+                    "JOIN \"FilmLikes\" other_likes " +
+                    "ON other_likes.\"FilmId\" = user_likes.\"FilmId\" " +
+                    "AND other_likes.\"UserID\" <> user_likes.\"UserID\" " +
+                    "WHERE user_likes.\"UserID\" = ? " +
+                    "GROUP BY other_likes.\"UserID\" " +
+                    "ORDER BY common_likes DESC, other_likes.\"UserID\" ASC " +
+                    "LIMIT 1" +
+                    ") " +
+                    "SELECT f.*, r.\"Name\" AS \"RatingName\" " +
+                    "FROM similar_user su " +
+                    "JOIN \"FilmLikes\" recommended_likes " +
+                    "ON recommended_likes.\"UserID\" = su.similar_user_id " +
+                    "JOIN \"Film\" f ON f.\"FilmId\" = recommended_likes.\"FilmId\" " +
+                    "LEFT JOIN \"Rating\" r ON r.\"RatingId\" = f.\"RatingId\" " +
+                    "WHERE NOT EXISTS (" +
+                    "SELECT 1 FROM \"FilmLikes\" own_likes " +
+                    "WHERE own_likes.\"UserID\" = ? " +
+                    "AND own_likes.\"FilmId\" = recommended_likes.\"FilmId\"" +
+                    ") " +
+                    "ORDER BY f.\"FilmId\" ASC;";
 
     public FilmDbStorage(JdbcTemplate jdbc, RowMapper<Film> mapper) {
         super(jdbc, mapper);
@@ -107,5 +133,44 @@ public class FilmDbStorage extends BaseRepository<Film> implements FilmStorage {
         return findMany(FIND_TOP_LIKES, top);
     }
 
+    @Override
+    public Collection<Film> findTopLikes(Integer top, Long genreId, Integer year) {
+        StringBuilder query = new StringBuilder(
+                "SELECT f.*, r.\"Name\" AS \"RatingName\" " +
+                        "FROM \"Film\" f " +
+                        "LEFT JOIN \"Rating\" r ON r.\"RatingId\" = f.\"RatingId\" " +
+                        "LEFT JOIN (" +
+                        "    SELECT \"FilmId\", COUNT(*) AS likes_count " +
+                        "    FROM \"FilmLikes\" " +
+                        "    GROUP BY \"FilmId\"" +
+                        ") lc ON lc.\"FilmId\" = f.\"FilmId\" " +
+                        "WHERE 1 = 1 ");
+
+        List<Object> params = new ArrayList<>();
+
+        if (genreId != null) {
+            query.append("AND EXISTS (" +
+                    "SELECT 1 FROM \"FilmGenre\" fg " +
+                    "WHERE fg.\"FilmId\" = f.\"FilmId\" AND fg.\"GenreId\" = ?" +
+                    ") ");
+            params.add(genreId);
+        }
+
+        if (year != null) {
+            query.append("AND EXTRACT(YEAR FROM f.\"ReleaseDate\") = ? ");
+            params.add(year);
+        }
+
+        query.append("ORDER BY COALESCE(lc.likes_count, 0) DESC, f.\"FilmId\" ASC LIMIT ?;");
+        params.add(top);
+
+        return findMany(query.toString(), params.toArray());
+    }
+
+
+    @Override
+    public Collection<Film> findRecommendations(Long userId) {
+        return findMany(FIND_RECOMMENDATIONS, userId, userId);
+    }
 
 }
