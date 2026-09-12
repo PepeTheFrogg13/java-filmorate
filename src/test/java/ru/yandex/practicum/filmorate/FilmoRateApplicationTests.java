@@ -17,10 +17,14 @@ import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
 
 @SpringBootTest
 @AutoConfigureTestDatabase
-@RequiredArgsConstructor(onConstructor_ = @Autowired)
 class FilmoRateApplicationTests {
 
     private final UserDbStorage userStorage;
+
+    @Autowired
+    public FilmoRateApplicationTests(UserDbStorage userStorage) {
+        this.userStorage = userStorage;
+    }
 
     @Test
     public void testFindUserById() {

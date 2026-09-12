@@ -7,7 +7,7 @@ import org.springframework.boot.test.autoconfigure.jdbc.AutoConfigureTestDatabas
 import org.springframework.boot.test.autoconfigure.jdbc.JdbcTest;
 import org.springframework.context.annotation.Import;
 import org.springframework.jdbc.core.JdbcTemplate;
-import ru.yandex.practicum.filmorate.exceptions.ValidationException;
+import ru.yandex.practicum.filmorate.exceptions.IdNotFoundException;
 import ru.yandex.practicum.filmorate.model.Director;
 import ru.yandex.practicum.filmorate.storage.DirectorDbStorage;
 
@@ -53,7 +53,7 @@ public class DirectorDbStorageTest {
         Director saved = directorDbStorage.save(director);
 
         directorDbStorage.delete(saved.getId());
-        assertThrows(ValidationException.class, () -> directorDbStorage.findById(saved.getId()));
+        assertThrows(IdNotFoundException.class, () -> directorDbStorage.findById(saved.getId()));
     }
 
     @Test
