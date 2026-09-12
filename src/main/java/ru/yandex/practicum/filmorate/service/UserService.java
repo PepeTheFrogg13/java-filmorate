@@ -48,7 +48,7 @@ public class UserService {
     public UserDto findById(Long id) {
         Optional<User> userOptional = userStorage.getUserById(id);
         if (userOptional.isEmpty()) {
-            throw new IdNotFoundException("Фильм с id = " + id + " не найден");
+            throw new IdNotFoundException("Пользователь с id = " + id + " не найден");
         } else {
             return UserMapper.mapToUserDto(userOptional.get());
         }
