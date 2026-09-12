@@ -3,6 +3,7 @@ package ru.yandex.practicum.filmorate.storage;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.core.RowMapper;
 import org.springframework.stereotype.Repository;
+import org.springframework.transaction.annotation.Transactional;
 import ru.yandex.practicum.filmorate.model.User;
 
 import java.util.Collection;
@@ -30,6 +31,9 @@ public class UserDbStorage extends BaseRepository<User> implements UserStorage {
     private static final String UPDATE_USER = "UPDATE \"User\" SET \"Email\" = ?, \"Login\" = ?, \"Name\" = ?, \"Birthday\" = ? WHERE \"UserID\" = ?;";
 
     private static final String DELETE_USER = "DELETE FROM \"User\" WHERE \"UserID\" = ?;";
+    private static final String DELETE_USER_LIKES = "DELETE FROM \"FilmLikes\" WHERE \"UserID\" = ?;";
+    private static final String DELETE_USER_FRIENDS =
+            "DELETE FROM \"UserFriends\" WHERE \"UserSenderId\" = ? OR \"UserRecipientId\" = ?;";
 
     private static final String INSERT_FRIEND_REQUSET = "INSERT INTO \"UserFriends\" (\"UserSenderId\",\"UserRecipientId\",\"StatusId\") VALUES (?,?,1);";
 
@@ -76,9 +80,11 @@ public class UserDbStorage extends BaseRepository<User> implements UserStorage {
     }
 
     @Override
-    public User deleteUser(User user) {
-        delete(DELETE_USER, user.getId());
-        return user;
+    @Transactional
+    public void deleteUser(Long id) {
+        jdbc.update(DELETE_USER_LIKES, id);
+        jdbc.update(DELETE_USER_FRIENDS, id, id);
+        jdbc.update(DELETE_USER, id);
     }
 
     @Override

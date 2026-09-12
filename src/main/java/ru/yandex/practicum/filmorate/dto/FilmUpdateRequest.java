@@ -7,12 +7,10 @@ import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Positive;
 import jakarta.validation.constraints.Size;
 import lombok.Data;
-import ru.yandex.practicum.filmorate.model.Director;
 
 
 import java.time.LocalDate;
 import java.util.ArrayList;
-import java.util.Set;
 
 @Data
 public class FilmUpdateRequest {
@@ -40,5 +38,5 @@ public class FilmUpdateRequest {
     //перечень жанров
     private ArrayList<GenreInsert> genres = new ArrayList<>();
 
-    private Set<Director> directors;
+
 }

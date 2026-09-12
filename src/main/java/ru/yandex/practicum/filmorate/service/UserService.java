@@ -48,7 +48,7 @@ public class UserService {
     public UserDto findById(Long id) {
         Optional<User> userOptional = userStorage.getUserById(id);
         if (userOptional.isEmpty()) {
-            throw new IdNotFoundException("Фильм с id = " + id + " не найден");
+            throw new IdNotFoundException("Пользователь с id = " + id + " не найден");
         } else {
             return UserMapper.mapToUserDto(userOptional.get());
         }
@@ -71,6 +71,14 @@ public class UserService {
         }
         log.info("Обновлён пользователь с id = " + user.getId());
         return userStorage.updateUser(user).get();
+    }
+
+    public void deleteUser(Long userId) {
+        if (userStorage.getUserById(userId).isEmpty()) {
+            throw new IdNotFoundException("Пользователь с id = " + userId + " не найден");
+        }
+        userStorage.deleteUser(userId);
+        log.info("Удалён пользователь с id = " + userId);
     }
 
     public User addFriend(Long id, Long friendId) {
