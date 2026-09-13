@@ -49,3 +49,12 @@ MERGE INTO "FilmGenre" ("FilmGenreId", "FilmId", "GenreId") KEY("FilmGenreId") V
 
 -- Лайки
 MERGE INTO "FilmLikes" ("FilmLikesId", "FilmId", "UserID") KEY("FilmLikesId") VALUES (1, 1, 1);
+
+ALTER TABLE "User" ALTER COLUMN "UserID" RESTART WITH 4;
+ALTER TABLE "Film" ALTER COLUMN "FilmId" RESTART WITH 3;
+ALTER TABLE "UserFriends" ALTER COLUMN "UserFriendsId" RESTART WITH 4;
+ALTER TABLE "FilmGenre" ALTER COLUMN "FilmGenreId" RESTART WITH 4;
+ALTER TABLE "FilmLikes" ALTER COLUMN "FilmLikesId" RESTART WITH 2;
+ALTER TABLE "Rating" ALTER COLUMN "RatingId" RESTART WITH 6;
+ALTER TABLE "Genre" ALTER COLUMN "GenreId" RESTART WITH 7;
+ALTER TABLE "FriendStatus" ALTER COLUMN "StatusId" RESTART WITH 3;
