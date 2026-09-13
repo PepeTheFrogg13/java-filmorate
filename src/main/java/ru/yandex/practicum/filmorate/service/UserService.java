@@ -9,7 +9,10 @@ import ru.yandex.practicum.filmorate.dto.UserUpdateRequest;
 import ru.yandex.practicum.filmorate.exceptions.IdNotFoundException;
 import ru.yandex.practicum.filmorate.exceptions.ValidationException;
 import ru.yandex.practicum.filmorate.mappers.UserMapper;
+import ru.yandex.practicum.filmorate.model.EventType;
+import ru.yandex.practicum.filmorate.model.Operation;
 import ru.yandex.practicum.filmorate.model.User;
+import ru.yandex.practicum.filmorate.storage.EventStorage;
 import ru.yandex.practicum.filmorate.storage.UserStorage;
 
 import java.util.Collection;
@@ -22,10 +25,12 @@ public class UserService {
 
     private final Logger log = LoggerFactory.getLogger(UserService.class);
 
+    private final EventStorage eventStorage;
 
     private final UserStorage userStorage;
 
-    public UserService(UserStorage userStorage) {
+    public UserService(EventStorage eventStorage, UserStorage userStorage) {
+        this.eventStorage = eventStorage;
         this.userStorage = userStorage;
     }
 
@@ -48,7 +53,7 @@ public class UserService {
     public UserDto findById(Long id) {
         Optional<User> userOptional = userStorage.getUserById(id);
         if (userOptional.isEmpty()) {
-            throw new IdNotFoundException("Фильм с id = " + id + " не найден");
+            throw new IdNotFoundException("Пользователь с id = " + id + " не найден");
         } else {
             return UserMapper.mapToUserDto(userOptional.get());
         }
@@ -82,7 +87,13 @@ public class UserService {
         if (userOptional.isEmpty()) {
             throw new IdNotFoundException("Пользователь с id = " + friendId + " не найден");
         }
-        return userStorage.changeFriend(id, friendId, 1).get();
+
+        User user = userStorage.changeFriend(id, friendId,1)
+                .orElseThrow(() -> new ValidationException("Не удалось добавить пользователя в друзья"));
+
+        eventStorage.addEvent(id, EventType.FRIEND, Operation.ADD, friendId);
+
+        return user;
     }
 
     public User deleteFriend(Long id, Long friendId) {
@@ -94,7 +105,13 @@ public class UserService {
         if (userOptional.isEmpty()) {
             throw new IdNotFoundException("Пользователь с id = " + friendId + " не найден");
         }
-        return userStorage.changeFriend(id, friendId, 2).get();
+
+        User user = userStorage.changeFriend(id, friendId, 2)
+                        .orElseThrow(() -> new ValidationException("Не удалось удалить пользователя из друзей"));
+
+        eventStorage.addEvent(id, EventType.FRIEND, Operation.REMOVE, friendId);
+
+        return user;
     }
 
     public User confirmFriend(Long id, Long friendId) {

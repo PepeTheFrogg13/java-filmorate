@@ -1,33 +1,60 @@
-INSERT INTO "Genre" ("Name") VALUES ('Комедия');
-INSERT INTO "Genre" ("Name") VALUES ('Драма');
-INSERT INTO "Genre" ("Name") VALUES ('Мультфильм');
-INSERT INTO "Genre" ("Name") VALUES ('Триллер');
-INSERT INTO "Genre" ("Name") VALUES ('Документальный');
-INSERT INTO "Genre" ("Name") VALUES ('Боевик');
+-- Жанры
+MERGE INTO "Genre" ("GenreId", "Name") KEY("GenreId") VALUES (1, 'Комедия');
+MERGE INTO "Genre" ("GenreId", "Name") KEY("GenreId") VALUES (2, 'Драма');
+MERGE INTO "Genre" ("GenreId", "Name") KEY("GenreId") VALUES (3, 'Мультфильм');
+MERGE INTO "Genre" ("GenreId", "Name") KEY("GenreId") VALUES (4, 'Триллер');
+MERGE INTO "Genre" ("GenreId", "Name") KEY("GenreId") VALUES (5, 'Документальный');
+MERGE INTO "Genre" ("GenreId", "Name") KEY("GenreId") VALUES (6, 'Боевик');
 
-INSERT INTO "Rating" ("Name") VALUES ('G');
-INSERT INTO "Rating" ("Name") VALUES ('PG');
-INSERT INTO "Rating" ("Name") VALUES ('PG-13');
-INSERT INTO "Rating" ("Name") VALUES ('R');
-INSERT INTO "Rating" ("Name") VALUES ('NC-17');
+-- Рейтинги
+MERGE INTO "Rating" ("RatingId", "Name") KEY("RatingId") VALUES (1, 'G');
+MERGE INTO "Rating" ("RatingId", "Name") KEY("RatingId") VALUES (2, 'PG');
+MERGE INTO "Rating" ("RatingId", "Name") KEY("RatingId") VALUES (3, 'PG-13');
+MERGE INTO "Rating" ("RatingId", "Name") KEY("RatingId") VALUES (4, 'R');
+MERGE INTO "Rating" ("RatingId", "Name") KEY("RatingId") VALUES (5, 'NC-17');
 
-INSERT INTO "FriendStatus" ("Name") VALUES ('Запрошено');
-INSERT INTO "FriendStatus" ("Name") VALUES ('Принято');
+-- Статусы дружбы
+MERGE INTO "FriendStatus" ("StatusId", "Name") KEY("StatusId") VALUES (1, 'Запрошено');
+MERGE INTO "FriendStatus" ("StatusId", "Name") KEY("StatusId") VALUES (2, 'Принято');
 
+-- Пользователи
+MERGE INTO "User" ("UserID", "Email", "Login", "Name", "Birthday") KEY("UserID")
+    VALUES (1, 'pepefrog@yandex.ru', 'Pepe', NULL, '2006-03-09');
 
-INSERT INTO "User" ("Email","Login","Birthday") VALUES ('pepefrog@yandex.ru','Pepe','2006-03-09');
-INSERT INTO "User" ("Email","Login","Name","Birthday") VALUES ('arbuz13@yandex.ru','Watermelon','Arbuzitto','2005-04-17');
-INSERT INTO "User" ("Email","Login","Name","Birthday") VALUES ('mikhail_prakticum@yandex.ru','mikhail','Misha','2000-01-27');
+MERGE INTO "User" ("UserID", "Email", "Login", "Name", "Birthday") KEY("UserID")
+    VALUES (2, 'arbuz13@yandex.ru', 'Watermelon', 'Arbuzitto', '2005-04-17');
 
-INSERT INTO "UserFriends" ("UserSenderId","UserRecipientId","StatusId") VALUES (1,2,1);
-INSERT INTO "UserFriends" ("UserSenderId","UserRecipientId","StatusId") VALUES (1,3,2);
-INSERT INTO "UserFriends" ("UserSenderId","UserRecipientId","StatusId") VALUES (2,3,2);
+MERGE INTO "User" ("UserID", "Email", "Login", "Name", "Birthday") KEY("UserID")
+    VALUES (3, 'mikhail_prakticum@yandex.ru', 'mikhail', 'Misha', '2000-01-27');
 
-INSERT INTO "Film" ("Name","Description","ReleaseDate","Duration","RatingId") VALUES ('Дедпул','Тест','2016-02-11',108,1);
-INSERT INTO "Film" ("Name","Description","ReleaseDate","Duration","RatingId") VALUES ('1+1','Тест','2011-02-26',112,3);
+-- Дружба
+MERGE INTO "UserFriends" ("UserFriendsId", "UserSenderId", "UserRecipientId", "StatusId") KEY("UserFriendsId")
+    VALUES (1, 1, 2, 1);
+MERGE INTO "UserFriends" ("UserFriendsId", "UserSenderId", "UserRecipientId", "StatusId") KEY("UserFriendsId")
+    VALUES (2, 1, 3, 2);
+MERGE INTO "UserFriends" ("UserFriendsId", "UserSenderId", "UserRecipientId", "StatusId") KEY("UserFriendsId")
+    VALUES (3, 2, 3, 2);
 
-INSERT INTO "FilmGenre" ("FilmId","GenreId") VALUES (1,1);
-INSERT INTO "FilmGenre" ("FilmId","GenreId") VALUES (1,2);
-INSERT INTO "FilmGenre" ("FilmId","GenreId") VALUES (1,3);
+-- Фильмы
+MERGE INTO "Film" ("FilmId", "Name", "Description", "ReleaseDate", "Duration", "RatingId") KEY("FilmId")
+    VALUES (1, 'Дедпул', 'Тест', '2016-02-11', 108, 1);
 
-INSERT INTO "FilmLikes" ("FilmId","UserID") VALUES (1,1);
+MERGE INTO "Film" ("FilmId", "Name", "Description", "ReleaseDate", "Duration", "RatingId") KEY("FilmId")
+    VALUES (2, '1+1', 'Тест', '2011-02-26', 112, 3);
+
+-- Жанры фильмов
+MERGE INTO "FilmGenre" ("FilmGenreId", "FilmId", "GenreId") KEY("FilmGenreId") VALUES (1, 1, 1);
+MERGE INTO "FilmGenre" ("FilmGenreId", "FilmId", "GenreId") KEY("FilmGenreId") VALUES (2, 1, 2);
+MERGE INTO "FilmGenre" ("FilmGenreId", "FilmId", "GenreId") KEY("FilmGenreId") VALUES (3, 1, 3);
+
+-- Лайки
+MERGE INTO "FilmLikes" ("FilmLikesId", "FilmId", "UserID") KEY("FilmLikesId") VALUES (1, 1, 1);
+
+ALTER TABLE "User" ALTER COLUMN "UserID" RESTART WITH 4;
+ALTER TABLE "Film" ALTER COLUMN "FilmId" RESTART WITH 3;
+ALTER TABLE "UserFriends" ALTER COLUMN "UserFriendsId" RESTART WITH 4;
+ALTER TABLE "FilmGenre" ALTER COLUMN "FilmGenreId" RESTART WITH 4;
+ALTER TABLE "FilmLikes" ALTER COLUMN "FilmLikesId" RESTART WITH 2;
+ALTER TABLE "Rating" ALTER COLUMN "RatingId" RESTART WITH 6;
+ALTER TABLE "Genre" ALTER COLUMN "GenreId" RESTART WITH 7;
+ALTER TABLE "FriendStatus" ALTER COLUMN "StatusId" RESTART WITH 3;
