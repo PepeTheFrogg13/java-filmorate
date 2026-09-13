@@ -213,6 +213,12 @@ public class FilmService {
             throw new ValidationException("Параметр sortBy должен быть 'year' или 'likes'");
         }
         List<Film> films = filmStorage.getFilmsByDirector(directorId, sortBy);
+        Map<Long, List> filmGenres = filmGenreStorage.getFilmGenres();
+        for (Film film : films) {
+            film.setGenreList(filmGenres.getOrDefault(film.getId(), new ArrayList<>()));
+            film.setLikeList(userStorage.findLikesByFilm(film.getId()).stream().toList());
+        }
+
         return films.stream().map(FilmMapper::mapToFilmDto).toList();
     }
 
@@ -227,7 +233,15 @@ public class FilmService {
                 throw new ValidationException("Недопустимый критерий поиска: " + c);
             }
         }
+
         List<Film> films = filmStorage.search(query, by);
+
+        Map<Long, List> filmGenres = filmGenreStorage.getFilmGenres();
+        for (Film film : films) {
+            film.setGenreList(filmGenres.getOrDefault(film.getId(), new ArrayList<>()));
+            film.setLikeList(userStorage.findLikesByFilm(film.getId()).stream().toList());
+        }
+
         return films.stream().map(FilmMapper::mapToFilmDto).toList();
     }
 }
