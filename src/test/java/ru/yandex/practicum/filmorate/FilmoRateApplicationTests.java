@@ -1,10 +1,12 @@
 package ru.yandex.practicum.filmorate;
 
 import lombok.RequiredArgsConstructor;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.jdbc.AutoConfigureTestDatabase;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.jdbc.core.JdbcTemplate;
 import ru.yandex.practicum.filmorate.dto.EventDto;
 import ru.yandex.practicum.filmorate.dto.ReviewDto;
 import ru.yandex.practicum.filmorate.dto.ReviewNewRequest;
@@ -33,10 +35,32 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 @RequiredArgsConstructor(onConstructor_ = @Autowired)
 class FilmoRateApplicationTests {
 
+    @Autowired
+    private JdbcTemplate jdbcTemplate;
+
     private final UserDbStorage userStorage;
     private final EventStorage eventStorage;
     private final EventService eventService;
     private final ReviewService reviewService;
+
+    @BeforeEach
+    void setUp() {
+        // Рейтинги
+        jdbcTemplate.update("MERGE INTO \"Rating\" (\"RatingId\", \"Name\") KEY(\"RatingId\") VALUES (1, 'G')");
+        jdbcTemplate.update("MERGE INTO \"Rating\" (\"RatingId\", \"Name\") KEY(\"RatingId\") VALUES (2, 'PG')");
+
+        // Пользователи
+        jdbcTemplate.update("MERGE INTO \"User\" (\"UserID\", \"Email\", \"Login\", \"Name\", \"Birthday\") KEY(\"UserID\") VALUES (1, 'u1@mail.ru', 'user1', 'User One', '1990-01-01')");
+        jdbcTemplate.update("MERGE INTO \"User\" (\"UserID\", \"Email\", \"Login\", \"Name\", \"Birthday\") KEY(\"UserID\") VALUES (2, 'u2@mail.ru', 'user2', 'User Two', '1991-02-02')");
+        jdbcTemplate.update("MERGE INTO \"User\" (\"UserID\", \"Email\", \"Login\", \"Name\", \"Birthday\") KEY(\"UserID\") VALUES (3, 'u3@mail.ru', 'user3', 'User Three', '1992-03-03')");
+
+        // Фильмы (обязательно id=1)
+        jdbcTemplate.update("MERGE INTO \"Film\" (\"FilmId\", \"Name\", \"Description\", \"ReleaseDate\", \"Duration\", \"RatingId\") KEY(\"FilmId\") VALUES (1, 'Film 1', 'desc', '2020-01-01', 120, 1)");
+        jdbcTemplate.update("MERGE INTO \"Film\" (\"FilmId\", \"Name\", \"Description\", \"ReleaseDate\", \"Duration\", \"RatingId\") KEY(\"FilmId\") VALUES (2, 'Film 2', 'desc', '2021-01-01', 120, 2)");
+
+        // Дружба 2 → 3 (для getFeed)
+        jdbcTemplate.update("MERGE INTO \"UserFriends\" (\"UserFriendsId\", \"UserSenderId\", \"UserRecipientId\", \"StatusId\") KEY(\"UserFriendsId\") VALUES (1, 2, 3, 2)");
+    }
 
     @Test
     public void testFindUserById() {

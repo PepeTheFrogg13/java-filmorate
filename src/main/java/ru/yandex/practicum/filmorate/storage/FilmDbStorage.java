@@ -4,14 +4,12 @@ import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.core.RowMapper;
 import org.springframework.stereotype.Repository;
 import ru.yandex.practicum.filmorate.exceptions.IdNotFoundException;
+import ru.yandex.practicum.filmorate.model.Director;
 import ru.yandex.practicum.filmorate.model.Film;
 import ru.yandex.practicum.filmorate.model.Genre;
 
 
-import java.util.Collection;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Optional;
+import java.util.*;
 
 @Repository
 public class FilmDbStorage extends BaseRepository<Film> implements FilmStorage {
@@ -66,18 +64,48 @@ public class FilmDbStorage extends BaseRepository<Film> implements FilmStorage {
                     ") " +
                     "ORDER BY f.\"FilmId\" ASC;";
 
-    public FilmDbStorage(JdbcTemplate jdbc, RowMapper<Film> mapper) {
+    // Получить фильмы конкретного режиссёра с сортировкой
+    private static final String FIND_FILMS_BY_DIRECTOR =
+            "SELECT f.\"FilmId\", f.\"Name\", f.\"Description\", f.\"ReleaseDate\", f.\"Duration\", f.\"RatingId\", r.\"Name\" AS \"RatingName\" " +
+                    "FROM \"Film\" f " +
+                    "JOIN \"film_director\" fd ON f.\"FilmId\" = fd.\"FilmId\" " +
+                    "LEFT JOIN \"Rating\" r ON f.\"RatingId\" = r.\"RatingId\" " +
+                    "WHERE fd.\"DirectorId\" = ?";
+
+    // Сортировка по году выпуска
+    private static final String ORDER_BY_YEAR = " ORDER BY f.\"ReleaseDate\"";
+
+    // Сортировка по количеству лайков
+    private static final String ORDER_BY_LIKES =
+            " ORDER BY (SELECT COUNT(*) FROM \"FilmLikes\" WHERE \"FilmId\" = f.\"FilmId\") DESC";
+
+
+    private final DirectorDbStorage directorDbStorage;
+
+    public FilmDbStorage(JdbcTemplate jdbc, RowMapper<Film> mapper, DirectorDbStorage directorDbStorage) {
         super(jdbc, mapper);
+        this.directorDbStorage = directorDbStorage;
     }
 
     @Override
     public List<Film> findAll() {
-        return findMany(FIND_ALL_FILMS);
+        List<Film> films = findMany(FIND_ALL_FILMS);
+        for (Film film : films) {
+            List<Director> directors = directorDbStorage.findDirectorsByFilmId(film.getId());
+            film.setDirectors(new HashSet<>(directors));
+        }
+        return films;
     }
 
     @Override
     public Optional<Film> getFilmById(Long id) {
-        return findOne(FIND_FILM_BY_ID, id);
+        Optional<Film> filmOpt = findOne(FIND_FILM_BY_ID, id);
+        if (filmOpt.isPresent()) {
+            Film film = filmOpt.get();
+            List<Director> directors = directorDbStorage.findDirectorsByFilmId(film.getId());
+            film.setDirectors(new HashSet<>(directors));
+        }
+        return filmOpt;
     }
 
     @Override
@@ -86,6 +114,9 @@ public class FilmDbStorage extends BaseRepository<Film> implements FilmStorage {
         Long id = insert(INSERT_FILM, film.getName(), film.getDescription(), film.getReleaseDate(), film.getDuration(), ratingId);
         for (Genre genre : film.getGenreList()) {
             insert(INSERT_FILM_GENRE, id, genre.getId());
+        }
+        if (film.getDirectors() != null && !film.getDirectors().isEmpty()) {
+            directorDbStorage.addDirectorsToFilm(id, film.getDirectors());
         }
         film.setId(id);
         return film;
@@ -108,6 +139,10 @@ public class FilmDbStorage extends BaseRepository<Film> implements FilmStorage {
             if (!oldFilm.getGenreList().contains(genre)) {
                 insert(INSERT_FILM_GENRE, film.getId(), genre.getId());
             }
+        }
+        directorDbStorage.removeDirectorsFromFilm(film.getId());
+        if (film.getDirectors() != null && !film.getDirectors().isEmpty()) {
+            directorDbStorage.addDirectorsToFilm(film.getId(), film.getDirectors());
         }
         return getFilmById(film.getId());
     }
@@ -164,13 +199,33 @@ public class FilmDbStorage extends BaseRepository<Film> implements FilmStorage {
         query.append("ORDER BY COALESCE(lc.likes_count, 0) DESC, f.\"FilmId\" ASC LIMIT ?;");
         params.add(top);
 
+        List<Film> films = (List<Film>) findMany(query.toString(), params.toArray());
+
+        for (Film film : films) {
+            List<Director> directors = directorDbStorage.findDirectorsByFilmId(film.getId());
+            film.setDirectors(new HashSet<>(directors));
+        }
         return findMany(query.toString(), params.toArray());
     }
-
 
     @Override
     public Collection<Film> findRecommendations(Long userId) {
         return findMany(FIND_RECOMMENDATIONS, userId, userId);
     }
 
+    @Override
+    public List<Film> getFilmsByDirector(Long directorId, String sortBy) {
+        String sql = FIND_FILMS_BY_DIRECTOR;
+        if ("likes".equalsIgnoreCase(sortBy)) {
+            sql += ORDER_BY_LIKES;
+        } else {
+            sql += ORDER_BY_YEAR;
+        }
+        List<Film> films = findMany(sql, directorId);
+        for (Film film : films) {
+            List<Director> directors = directorDbStorage.findDirectorsByFilmId(film.getId());
+            film.setDirectors(new HashSet<>(directors));
+        }
+        return films;
+    }
 }

@@ -39,6 +39,19 @@ CREATE TABLE IF NOT EXISTS "Film" (
                                      )
     );
 
+CREATE TABLE IF NOT EXISTS "directors" (
+     "DirectorId" INT AUTO_INCREMENT PRIMARY KEY,
+      "Name" VARCHAR(255) NOT NULL
+    );
+
+CREATE TABLE IF NOT EXISTS "film_director" (
+    "FilmId" INT NOT NULL,
+    "DirectorId" INT NOT NULL,
+    PRIMARY KEY ("FilmId", "DirectorId"),
+    FOREIGN KEY ("FilmId") REFERENCES "Film"("FilmId") ON DELETE CASCADE,
+    FOREIGN KEY ("DirectorId") REFERENCES "directors"("DirectorId") ON DELETE CASCADE
+    );
+
 CREATE TABLE IF NOT EXISTS "Genre" (
                                        "GenreId" INTEGER   NOT NULL AUTO_INCREMENT,
                                        "Name" VARCHAR(200)   NOT NULL,
