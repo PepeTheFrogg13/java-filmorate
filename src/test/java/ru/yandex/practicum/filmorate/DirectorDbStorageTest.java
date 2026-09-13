@@ -13,6 +13,7 @@ import ru.yandex.practicum.filmorate.storage.DirectorDbStorage;
 
 import java.util.List;
 import java.util.Set;
+import java.util.concurrent.atomic.AtomicLong;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -26,6 +27,7 @@ public class DirectorDbStorageTest {
 
     @Autowired
     private JdbcTemplate jdbcTemplate;
+    private final AtomicLong filmIdSeq = new AtomicLong(1000L);
 
     @BeforeEach
     void setUp() {
@@ -106,17 +108,16 @@ public class DirectorDbStorageTest {
     }
 
     private Long insertFilm(String name) {
-        var keyHolder = new org.springframework.jdbc.support.GeneratedKeyHolder();
-        jdbcTemplate.update(connection -> {
-            var ps = connection.prepareStatement(
-                    "INSERT INTO \"Film\" (\"Name\", \"Description\", \"ReleaseDate\", \"Duration\") VALUES (?, ?, ?, ?)",
-                    new String[]{"FilmId"});
-            ps.setString(1, name);
-            ps.setString(2, "desc");
-            ps.setDate(3, java.sql.Date.valueOf("2020-01-01"));
-            ps.setInt(4, 120);
-            return ps;
-        }, keyHolder);
-        return keyHolder.getKey().longValue();
+        Long filmId = filmIdSeq.getAndIncrement();
+        jdbcTemplate.update(
+                "INSERT INTO \"Film\" (\"FilmId\", \"Name\", \"Description\", \"ReleaseDate\", \"Duration\") " +
+                        "VALUES (?, ?, ?, ?, ?)",
+                filmId,
+                name,
+                "desc",
+                java.sql.Date.valueOf("2020-01-01"),
+                120
+        );
+        return filmId;
     }
 }
