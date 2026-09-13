@@ -8,7 +8,6 @@ import ru.yandex.practicum.filmorate.model.Director;
 import ru.yandex.practicum.filmorate.model.Film;
 import ru.yandex.practicum.filmorate.model.Genre;
 
-
 import java.util.*;
 
 @Repository
@@ -165,7 +164,12 @@ public class FilmDbStorage extends BaseRepository<Film> implements FilmStorage {
 
     @Override
     public Collection<Film> findTopLikes(Integer top) {
-        return findMany(FIND_TOP_LIKES, top);
+        List<Film> films = findMany(FIND_TOP_LIKES, top);
+        for (Film film : films) {
+            List<Director> directors = directorDbStorage.findDirectorsByFilmId(film.getId());
+            film.setDirectors(new HashSet<>(directors));
+        }
+        return films;
     }
 
     @Override
@@ -205,7 +209,7 @@ public class FilmDbStorage extends BaseRepository<Film> implements FilmStorage {
             List<Director> directors = directorDbStorage.findDirectorsByFilmId(film.getId());
             film.setDirectors(new HashSet<>(directors));
         }
-        return findMany(query.toString(), params.toArray());
+        return films;
     }
 
     @Override
@@ -222,6 +226,45 @@ public class FilmDbStorage extends BaseRepository<Film> implements FilmStorage {
             sql += ORDER_BY_YEAR;
         }
         List<Film> films = findMany(sql, directorId);
+        for (Film film : films) {
+            List<Director> directors = directorDbStorage.findDirectorsByFilmId(film.getId());
+            film.setDirectors(new HashSet<>(directors));
+        }
+        return films;
+    }
+
+    @Override
+    public List<Film> search(String query, String by) {
+        boolean searchByTitle = by.contains("title");
+        boolean searchByDirector = by.contains("director");
+
+        StringBuilder sqlBuilder = new StringBuilder();
+        sqlBuilder.append("SELECT f.\"FilmId\", f.\"Name\", f.\"Description\", f.\"ReleaseDate\", f.\"Duration\", f.\"RatingId\", r.\"Name\" AS \"RatingName\" ")
+                .append("FROM \"Film\" f ")
+                .append("LEFT JOIN \"film_director\" fd ON f.\"FilmId\" = fd.\"FilmId\" ")
+                .append("LEFT JOIN \"directors\" d ON fd.\"DirectorId\" = d.\"DirectorId\" ")
+                .append("LEFT JOIN \"Rating\" r ON f.\"RatingId\" = r.\"RatingId\" ")
+                .append("WHERE 1=1 ");
+
+        List<Object> params = new ArrayList<>();
+
+        if (searchByTitle && searchByDirector) {
+            sqlBuilder.append(" AND (LOWER(f.\"Name\") LIKE LOWER(?) OR LOWER(d.\"Name\") LIKE LOWER(?)) ");
+            params.add("%" + query + "%");
+            params.add("%" + query + "%");
+        } else if (searchByTitle) {
+            sqlBuilder.append(" AND LOWER(f.\"Name\") LIKE LOWER(?) ");
+            params.add("%" + query + "%");
+        } else if (searchByDirector) {
+            sqlBuilder.append(" AND LOWER(d.\"Name\") LIKE LOWER(?) ");
+            params.add("%" + query + "%");
+        }
+
+        sqlBuilder.append(" GROUP BY f.\"FilmId\", f.\"Name\", f.\"Description\", f.\"ReleaseDate\", f.\"Duration\", f.\"RatingId\", r.\"Name\" ");
+        sqlBuilder.append(" ORDER BY (SELECT COUNT(*) FROM \"FilmLikes\" WHERE \"FilmId\" = f.\"FilmId\") DESC");
+
+        List<Film> films = findMany(sqlBuilder.toString(), params.toArray());
+
         for (Film film : films) {
             List<Director> directors = directorDbStorage.findDirectorsByFilmId(film.getId());
             film.setDirectors(new HashSet<>(directors));
