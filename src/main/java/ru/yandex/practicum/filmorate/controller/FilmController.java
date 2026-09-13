@@ -10,6 +10,7 @@ import ru.yandex.practicum.filmorate.service.FilmService;
 
 
 import java.util.Collection;
+import java.util.List;
 
 
 @RestController
@@ -37,6 +38,13 @@ public class FilmController {
         return filmService.findTop(count);
     }
 
+    @GetMapping("/director/{directorId}")
+    public List<FilmDto> getFilmsByDirector(
+            @PathVariable Long directorId,
+            @RequestParam(defaultValue = "year") String sortBy) {
+        return filmService.getFilmsByDirector(directorId, sortBy);
+    }
+
     @PostMapping
     public FilmDto createFilm(@Valid @RequestBody FilmNewRequest film) {
         return filmService.createFilm(film);
@@ -56,5 +64,4 @@ public class FilmController {
     public Film dislikeFilm(@PathVariable Long id, @PathVariable Long userId) {
         return filmService.deleteLike(id, userId);
     }
-
 }
