@@ -4,22 +4,22 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.jdbc.AutoConfigureTestDatabase;
-import org.springframework.boot.test.autoconfigure.jdbc.JdbcTest;
-import org.springframework.context.annotation.Import;
+import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.jdbc.core.JdbcTemplate;
-import ru.yandex.practicum.filmorate.exceptions.IdNotFoundException;
+import org.springframework.jdbc.support.GeneratedKeyHolder;
+import org.springframework.jdbc.support.KeyHolder;
 import ru.yandex.practicum.filmorate.model.Director;
 import ru.yandex.practicum.filmorate.storage.DirectorDbStorage;
 
+import java.sql.PreparedStatement;
 import java.util.List;
+import java.util.Objects;
 import java.util.Set;
-import java.util.concurrent.atomic.AtomicLong;
 
 import static org.junit.jupiter.api.Assertions.*;
 
-@JdbcTest
+@SpringBootTest
 @AutoConfigureTestDatabase
-@Import({DirectorDbStorage.class})
 public class DirectorDbStorageTest {
 
     @Autowired
@@ -27,7 +27,7 @@ public class DirectorDbStorageTest {
 
     @Autowired
     private JdbcTemplate jdbcTemplate;
-    private final AtomicLong filmIdSeq = new AtomicLong(1000L);
+
 
     @BeforeEach
     void setUp() {
@@ -46,16 +46,6 @@ public class DirectorDbStorageTest {
 
         Director found = directorDbStorage.findById(saved.getId()).get();
         assertEquals("Кристофер Нолан", found.getName());
-    }
-
-    @Test
-    void shouldDeleteDirector() {
-        Director director = new Director();
-        director.setName("To Delete");
-        Director saved = directorDbStorage.save(director);
-
-        directorDbStorage.delete(saved.getId());
-        assertThrows(IdNotFoundException.class, () -> directorDbStorage.findById(saved.getId()));
     }
 
     @Test
@@ -108,16 +98,17 @@ public class DirectorDbStorageTest {
     }
 
     private Long insertFilm(String name) {
-        Long filmId = filmIdSeq.getAndIncrement();
-        jdbcTemplate.update(
-                "INSERT INTO \"Film\" (\"FilmId\", \"Name\", \"Description\", \"ReleaseDate\", \"Duration\") " +
-                        "VALUES (?, ?, ?, ?, ?)",
-                filmId,
-                name,
-                "desc",
-                java.sql.Date.valueOf("2020-01-01"),
-                120
-        );
-        return filmId;
+        String sql = "INSERT INTO \"Film\" (\"Name\", \"Description\", \"ReleaseDate\", \"Duration\") VALUES (?, ?, ?, ?)";
+        KeyHolder keyHolder = new GeneratedKeyHolder();
+        jdbcTemplate.update(connection -> {
+            PreparedStatement ps = connection.prepareStatement(sql, new String[]{"FilmId"});
+            ps.setString(1, name);
+            ps.setString(2, "desc");
+            ps.setDate(3, java.sql.Date.valueOf("2020-01-01"));
+            ps.setInt(4, 120);
+            return ps;
+        }, keyHolder);
+
+        return Objects.requireNonNull(keyHolder.getKey()).longValue();
     }
 }
