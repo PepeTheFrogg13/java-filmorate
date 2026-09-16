@@ -16,6 +16,7 @@ import ru.yandex.practicum.filmorate.storage.*;
 
 import java.time.LocalDate;
 import java.util.*;
+import java.util.stream.Collectors;
 
 @Service
 public class FilmService {
@@ -72,7 +73,9 @@ public class FilmService {
             film.setLikeList(userStorage.findLikesByFilm(film.getId()).stream().toList());
         }
         for (Film film : filmList) {
-            film.setDirectors(new HashSet<>(filmDirectors.get(film.getId())));
+            if (filmDirectors.containsKey(film.getId())){
+                film.setDirectors(new HashSet<>(filmDirectors.get(film.getId())));
+            }
         }
         return filmList.stream().map(FilmMapper::mapToFilmDto).toList();
     }
@@ -85,6 +88,7 @@ public class FilmService {
             Film film = filmOptional.get();
             film.setGenreList(genreStorage.findByFilm(film.getId()).stream().toList());
             film.setLikeList(userStorage.findLikesByFilm(film.getId()).stream().toList());
+            film.setDirectors(directorStorage.findDirectorsByFilmId(film.getId()).stream().collect(Collectors.toSet()));
             return FilmMapper.mapToFilmDto(film);
         }
     }
