@@ -67,7 +67,7 @@ public class FilmDbStorage extends BaseRepository<Film> implements FilmStorage {
     private static final String FIND_FILMS_BY_DIRECTOR =
             "SELECT f.\"FilmId\", f.\"Name\", f.\"Description\", f.\"ReleaseDate\", f.\"Duration\", f.\"RatingId\", r.\"Name\" AS \"RatingName\" " +
                     "FROM \"Film\" f " +
-                    "JOIN \"film_director\" fd ON f.\"FilmId\" = fd.\"FilmId\" " +
+                    "JOIN \"FilmDirector\" fd ON f.\"FilmId\" = fd.\"FilmId\" " +
                     "LEFT JOIN \"Rating\" r ON f.\"RatingId\" = r.\"RatingId\" " +
                     "WHERE fd.\"DirectorId\" = ?";
 
@@ -238,7 +238,7 @@ public class FilmDbStorage extends BaseRepository<Film> implements FilmStorage {
         StringBuilder sqlBuilder = new StringBuilder();
         sqlBuilder.append("SELECT f.\"FilmId\", f.\"Name\", f.\"Description\", f.\"ReleaseDate\", f.\"Duration\", f.\"RatingId\", r.\"Name\" AS \"RatingName\" ")
                 .append("FROM \"Film\" f ")
-                .append("LEFT JOIN \"film_director\" fd ON f.\"FilmId\" = fd.\"FilmId\" ")
+                .append("LEFT JOIN \"FilmDirector\" fd ON f.\"FilmId\" = fd.\"FilmId\" ")
                 .append("LEFT JOIN \"directors\" d ON fd.\"DirectorId\" = d.\"DirectorId\" ")
                 .append("LEFT JOIN \"Rating\" r ON f.\"RatingId\" = r.\"RatingId\" ")
                 .append("WHERE 1=1 ");

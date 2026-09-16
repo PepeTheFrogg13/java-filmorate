@@ -41,10 +41,10 @@ public class FilmServiceTest {
     void setUp() {
         jdbcTemplate.execute("DELETE FROM \"FilmLikes\"");
         jdbcTemplate.execute("DELETE FROM \"FilmGenre\"");
-        jdbcTemplate.execute("DELETE FROM \"film_director\"");
+        jdbcTemplate.execute("DELETE FROM \"FilmDirector\"");
         jdbcTemplate.execute("DELETE FROM \"Film\"");
-        jdbcTemplate.execute("DELETE FROM \"directors\"");
-        jdbcTemplate.execute("ALTER TABLE \"directors\" ALTER COLUMN \"DirectorId\" RESTART WITH 1");
+        jdbcTemplate.execute("DELETE FROM \"Director\"");
+        jdbcTemplate.execute("ALTER TABLE \"Director\" ALTER COLUMN \"DirectorId\" RESTART WITH 1");
         jdbcTemplate.execute("ALTER TABLE \"Film\" ALTER COLUMN \"FilmId\" RESTART WITH 1");
     }
 
