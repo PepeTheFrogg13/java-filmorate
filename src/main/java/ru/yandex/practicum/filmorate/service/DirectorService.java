@@ -23,7 +23,7 @@ public class DirectorService {
 
     public Director getDirectorById(Long id) {
         Optional<Director> directorOptional = directorDbStorage.findById(id);
-        if (directorOptional.isEmpty()){
+        if (directorOptional.isEmpty()) {
             throw new IdNotFoundException("Режиссер с id = " + id + " не найден");
         }
         return directorOptional.get();
@@ -37,7 +37,7 @@ public class DirectorService {
     public Director updateDirector(Director director) {
         validateDirector(director);
         Optional<Director> directorOptional = directorDbStorage.findById(director.getId());
-        if (directorOptional.isEmpty()){
+        if (directorOptional.isEmpty()) {
             throw new IdNotFoundException("Режиссер с id = " + director.getId() + " не найден");
         }
         return directorDbStorage.update(director).get();
