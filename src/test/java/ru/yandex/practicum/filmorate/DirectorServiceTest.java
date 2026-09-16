@@ -27,9 +27,9 @@ public class DirectorServiceTest {
 
     @BeforeEach
     void setUp() {
-        jdbcTemplate.execute("DELETE FROM \"film_director\"");
-        jdbcTemplate.execute("DELETE FROM \"directors\"");
-        jdbcTemplate.execute("ALTER TABLE \"directors\" ALTER COLUMN \"DirectorId\" RESTART WITH 1");
+        jdbcTemplate.execute("DELETE FROM \"FilmDirector\"");
+        jdbcTemplate.execute("DELETE FROM \"Director\"");
+        jdbcTemplate.execute("ALTER TABLE \"Director\" ALTER COLUMN \"DirectorId\" RESTART WITH 1");
     }
 
     @Test
