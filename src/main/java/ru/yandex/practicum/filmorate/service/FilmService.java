@@ -3,6 +3,7 @@ package ru.yandex.practicum.filmorate.service;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import ru.yandex.practicum.filmorate.dto.FilmDto;
 import ru.yandex.practicum.filmorate.dto.FilmNewRequest;
 import ru.yandex.practicum.filmorate.dto.FilmUpdateRequest;
@@ -28,21 +29,28 @@ public class FilmService {
     private final RatingStorage ratingStorage;
     private final GenreStorage genreStorage;
     private final FilmGenreStorage filmGenreStorage;
+    private final DirectorDbStorage directorStorage;
     private final DirectorService directorService;
     private final EventStorage eventStorage;
+    private final FilmDirectorStorage filmDirectorStorage;
 
 
     public FilmService(FilmStorage filmStorage,
                        RatingStorage ratingStorage,
                        GenreStorage genreStorage,
-                       UserStorage userStorage, FilmGenreStorage filmGenreStorage, DirectorService directorService, EventStorage eventStorage) {
+                       UserStorage userStorage,
+                       FilmGenreStorage filmGenreStorage, DirectorDbStorage directorStorage,
+                       DirectorService directorService,
+                       EventStorage eventStorage, FilmDirectorStorage filmDirectorStorage) {
         this.filmStorage = filmStorage;
         this.ratingStorage = ratingStorage;
         this.genreStorage = genreStorage;
         this.userStorage = userStorage;
         this.filmGenreStorage = filmGenreStorage;
+        this.directorStorage = directorStorage;
         this.directorService = directorService;
         this.eventStorage = eventStorage;
+        this.filmDirectorStorage = filmDirectorStorage;
     }
 
     public void validate(Film film) {
@@ -55,12 +63,16 @@ public class FilmService {
 
     public Collection<FilmDto> findAll() {
         Map<Long, List> filmGenres = filmGenreStorage.getFilmGenres();
+        Map<Long, List> filmDirectors = filmDirectorStorage.getFilmDirectors();
         List<Film> filmList = filmStorage.findAll().stream().toList();
         for (Film film : filmList) {
             film.setGenreList(filmGenres.get(film.getId()));
         }
         for (Film film : filmList) {
             film.setLikeList(userStorage.findLikesByFilm(film.getId()).stream().toList());
+        }
+        for (Film film : filmList) {
+            film.setDirectors(new HashSet<>(filmDirectors.get(film.getId())));
         }
         return filmList.stream().map(FilmMapper::mapToFilmDto).toList();
     }
@@ -77,6 +89,7 @@ public class FilmService {
         }
     }
 
+    @Transactional
     public FilmDto createFilm(FilmNewRequest filmNewRequest) {
         Film newFilm = FilmMapper.mapToFilm(filmNewRequest);
         validate(newFilm);
@@ -131,15 +144,18 @@ public class FilmService {
                 film.getGenreList().add(genreOptional.get());
             }
         }
-        if (filmUpdateRequest.getDirectors() != null && !filmUpdateRequest.getDirectors().isEmpty()) {
-            Set<Director> directors = new HashSet<>();
-            for (var directorDto : filmUpdateRequest.getDirectors()) {
-                Long directorId = directorDto.getId();
-                Director director = directorService.getDirectorById(directorId);
-                directors.add(director);
+
+        for (Long directorId : filmUpdateRequest.getDirectors().stream().map(Director::getId).toList()) {
+
+            Optional<Director> directorOptional = directorStorage.findById(directorId);
+            if (directorOptional.isEmpty()) {
+                throw new IdNotFoundException("Режиссёр с id = " + directorId + " не найден");
+            } else {
+                film.getDirectors().add(directorOptional.get());
             }
-            film.setDirectors(directors);
         }
+
+
         return FilmMapper.mapToFilmDto(film);
     }
 
@@ -178,17 +194,16 @@ public class FilmService {
         return optionalFilm.get();
     }
 
-    public Collection<FilmDto> findTop(Integer top) {
+    public Collection<FilmDto> findTop(Integer top, Long genreId, Integer year) {
         Map<Long, List> filmGenres = filmGenreStorage.getFilmGenres();
-        List<Film> filmList = filmStorage.findTopLikes(top).stream().toList();
+        List<Film> filmList = filmStorage.findTopLikes(top, genreId, year).stream().toList();
         for (Film film : filmList) {
-            film.setGenreList(filmGenres.get(film.getId()));
-        }
-        for (Film film : filmList) {
+            film.setGenreList(filmGenres.getOrDefault(film.getId(), new ArrayList<Genre>()));
             film.setLikeList(userStorage.findLikesByFilm(film.getId()).stream().toList());
         }
         return filmList.stream().map(FilmMapper::mapToFilmDto).toList();
     }
+
 
     public Collection<FilmDto> getRecommendations(Long userId) {
         if (userStorage.getUserById(userId).isEmpty()) {

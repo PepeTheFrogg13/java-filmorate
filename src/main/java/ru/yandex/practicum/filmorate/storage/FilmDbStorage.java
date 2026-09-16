@@ -89,10 +89,6 @@ public class FilmDbStorage extends BaseRepository<Film> implements FilmStorage {
     @Override
     public List<Film> findAll() {
         List<Film> films = findMany(FIND_ALL_FILMS);
-        for (Film film : films) {
-            List<Director> directors = directorDbStorage.findDirectorsByFilmId(film.getId());
-            film.setDirectors(new HashSet<>(directors));
-        }
         return films;
     }
 
@@ -111,6 +107,7 @@ public class FilmDbStorage extends BaseRepository<Film> implements FilmStorage {
     public Film createFilm(Film film) {
         Long ratingId = film.getRating().getId();
         Long id = insert(INSERT_FILM, film.getName(), film.getDescription(), film.getReleaseDate(), film.getDuration(), ratingId);
+
         for (Genre genre : film.getGenreList()) {
             insert(INSERT_FILM_GENRE, id, genre.getId());
         }

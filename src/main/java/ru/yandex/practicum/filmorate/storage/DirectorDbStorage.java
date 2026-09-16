@@ -2,95 +2,76 @@ package ru.yandex.practicum.filmorate.storage;
 
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.core.RowMapper;
-import org.springframework.jdbc.support.GeneratedKeyHolder;
-import org.springframework.jdbc.support.KeyHolder;
 import org.springframework.stereotype.Repository;
 import ru.yandex.practicum.filmorate.exceptions.IdNotFoundException;
 import ru.yandex.practicum.filmorate.model.Director;
 
-import java.sql.PreparedStatement;
 import java.util.List;
+import java.util.Optional;
 import java.util.Set;
 
 @Repository
-public class DirectorDbStorage {
-    private final JdbcTemplate jdbcTemplate;
+public class DirectorDbStorage extends BaseRepository<Director> implements DirectorStorage {
 
-    public DirectorDbStorage(JdbcTemplate jdbcTemplate) {
-        this.jdbcTemplate = jdbcTemplate;
+    private static final String FIND_ALL_DIRECTORS = "SELECT \"DirectorId\", \"Name\" FROM \"Director\"";
+    private static final String FIND_BY_ID = "SELECT \"DirectorId\", \"Name\" FROM \"Director\" WHERE \"DirectorId\" = ?";
+    private static final String FIND_DIRECTORS_BY_FILM = "SELECT d.\"DirectorId\", d.\"Name\" " +
+            "FROM \"Director\" d " +
+            "JOIN \"FilmDirector\" fd ON d.\"DirectorId\" = fd.\"DirectorId\" " +
+            "WHERE fd.\"FilmId\" = ?";
+
+    private static final String INSERT_DIRECTOR = "INSERT INTO \"Director\" (\"Name\") VALUES (?)";
+    private static final String INSERT_DIRECTOR_INTO_FILM = "MERGE INTO \"FilmDirector\" (\"FilmId\",\"DirectorId\") KEY (\"FilmId\",\"DirectorId\") VALUES (?,?);";
+
+    private static final String UPDATE_DIRECTOR = "UPDATE \"Director\" SET \"Name\" = ? WHERE \"DirectorId\" = ?";
+
+    private static final String DELETE_DIRECTOR = "DELETE FROM \"Director\" WHERE \"DirectorId\" = ?";
+    private static final String DELETE_DIRECTOR_FROM_FILM = "DELETE FROM \"FilmDirector\" WHERE \"FilmId\" = ?";
+
+
+    public DirectorDbStorage(JdbcTemplate jdbc, RowMapper<Director> mapper) {
+        super(jdbc, mapper);
     }
-
-    private static final RowMapper<Director> DIRECTOR_ROW_MAPPER = (rs, rowNum) -> {
-        Director director = new Director();
-        director.setId(rs.getLong("DirectorId"));
-        director.setName(rs.getString("Name"));
-        return director;
-    };
 
     public List<Director> findAll() {
-        String sql = "SELECT \"DirectorId\", \"Name\" FROM \"directors\"";
-        return jdbcTemplate.query(sql, DIRECTOR_ROW_MAPPER);
+        return findMany(FIND_ALL_DIRECTORS);
     }
 
-    public Director findById(Long id) {
-        String sql = "SELECT \"DirectorId\", \"Name\" FROM \"directors\" WHERE \"DirectorId\" = ?";
-        List<Director> result = jdbcTemplate.query(sql, DIRECTOR_ROW_MAPPER, id);
-        if (result.isEmpty()) {
-            throw new IdNotFoundException("Режиссёр с id " + id + " не найден");
-        }
-        return result.get(0);
+    public Optional<Director> findById(Long id) {
+        return findOne(FIND_BY_ID, id);
     }
 
     public Director save(Director director) {
-        String sql = "INSERT INTO \"directors\" (\"Name\") VALUES (?)";
-        KeyHolder keyHolder = new GeneratedKeyHolder();
-        jdbcTemplate.update(connection -> {
-            PreparedStatement ps = connection.prepareStatement(sql, new String[]{"DirectorId"});
-            ps.setString(1, director.getName());
-            return ps;
-        }, keyHolder);
-        director.setId(keyHolder.getKey().longValue());
+        Long id = insert(INSERT_DIRECTOR, director.getName());
+        director.setId(id);
         return director;
     }
 
-    public Director update(Director director) {
-        String sql = "UPDATE \"directors\" SET \"Name\" = ? WHERE \"DirectorId\" = ?";
-        int rows = jdbcTemplate.update(sql, director.getName(), director.getId());
-        if (rows == 0) {
-            throw new IdNotFoundException("Режиссёр с id " + director.getId() + " не найден");
+    public Optional<Director> update(Director director) {
+        Long id = director.getId();
+        Optional<Director> directorOptional = findById(id);
+        if (directorOptional.isEmpty()) {
+            throw new IdNotFoundException("Режиссёр с id " + id + " не найден");
         }
-        return director;
+        update(UPDATE_DIRECTOR, director.getName(), id);
+        return findById(id);
     }
 
     public void delete(Long id) {
-        jdbcTemplate.update("DELETE FROM \"film_director\" WHERE \"DirectorId\" = ?", id);
-        int rows = jdbcTemplate.update("DELETE FROM \"directors\" WHERE \"DirectorId\" = ?", id);
-        if (rows == 0) {
-            throw new IdNotFoundException("Режиссёр с id " + id + " не найден");
-        }
+        delete(DELETE_DIRECTOR, id);
     }
 
     public List<Director> findDirectorsByFilmId(Long filmId) {
-        String sql = "SELECT d.\"DirectorId\", d.\"Name\" " +
-                "FROM \"directors\" d " +
-                "JOIN \"film_director\" fd ON d.\"DirectorId\" = fd.\"DirectorId\" " +
-                "WHERE fd.\"FilmId\" = ?";
-        return jdbcTemplate.query(sql, DIRECTOR_ROW_MAPPER, filmId);
+        return findMany(FIND_DIRECTORS_BY_FILM, filmId);
     }
 
     public void addDirectorsToFilm(Long filmId, Set<Director> directors) {
-        if (directors == null || directors.isEmpty()) {
-            return;
+        for (Director director : directors) {
+            insert(INSERT_DIRECTOR_INTO_FILM, filmId, director.getId());
         }
-        String sql = "INSERT INTO \"film_director\" (\"FilmId\", \"DirectorId\") VALUES (?, ?)";
-        jdbcTemplate.batchUpdate(sql, directors, directors.size(),
-                (ps, director) -> {
-                    ps.setLong(1, filmId);
-                    ps.setLong(2, director.getId());
-                });
     }
 
     public void removeDirectorsFromFilm(Long filmId) {
-        jdbcTemplate.update("DELETE FROM \"film_director\" WHERE \"FilmId\" = ?", filmId);
+        delete(DELETE_DIRECTOR_FROM_FILM, filmId);
     }
 }

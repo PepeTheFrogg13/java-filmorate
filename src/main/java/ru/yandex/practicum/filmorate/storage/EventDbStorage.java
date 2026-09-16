@@ -14,10 +14,10 @@ import java.util.List;
 @Repository
 public class EventDbStorage extends BaseRepository<Event> implements EventStorage {
 
-    private static final String GET_EVENTS = "SELECT * FROM events WHERE user_id IN (%s) ORDER BY timestamp ASC, " +
+    private static final String GET_EVENTS = "SELECT * FROM \"Events\" WHERE user_id IN (%s) ORDER BY timestamp ASC, " +
             "event_id ASC";
 
-    private static final String ADD_EVENT = "INSERT INTO events (timestamp, user_id, event_type, operation, " +
+    private static final String ADD_EVENT = "INSERT INTO \"Events\" (timestamp, user_id, event_type, operation, " +
             "entity_id) VALUES(?, ?, ?, ?, ?)";
 
     public EventDbStorage(JdbcTemplate jdbc, RowMapper<Event> mapper) {
