@@ -73,7 +73,7 @@ public class FilmService {
             film.setLikeList(userStorage.findLikesByFilm(film.getId()).stream().toList());
         }
         for (Film film : filmList) {
-            if (filmDirectors.containsKey(film.getId())){
+            if (filmDirectors.containsKey(film.getId())) {
                 film.setDirectors(new HashSet<>(filmDirectors.get(film.getId())));
             }
         }
