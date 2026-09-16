@@ -44,7 +44,7 @@ public class DirectorDbStorageTest {
         Director saved = directorDbStorage.save(director);
         assertNotNull(saved.getId());
 
-        Director found = directorDbStorage.findById(saved.getId());
+        Director found = directorDbStorage.findById(saved.getId()).get();
         assertEquals("Кристофер Нолан", found.getName());
     }
 
