@@ -239,7 +239,7 @@ public class FilmDbStorage extends BaseRepository<Film> implements FilmStorage {
         sqlBuilder.append("SELECT f.\"FilmId\", f.\"Name\", f.\"Description\", f.\"ReleaseDate\", f.\"Duration\", f.\"RatingId\", r.\"Name\" AS \"RatingName\" ")
                 .append("FROM \"Film\" f ")
                 .append("LEFT JOIN \"FilmDirector\" fd ON f.\"FilmId\" = fd.\"FilmId\" ")
-                .append("LEFT JOIN \"directors\" d ON fd.\"DirectorId\" = d.\"DirectorId\" ")
+                .append("LEFT JOIN \"Director\" d ON fd.\"DirectorId\" = d.\"DirectorId\" ")
                 .append("LEFT JOIN \"Rating\" r ON f.\"RatingId\" = r.\"RatingId\" ")
                 .append("WHERE 1=1 ");
 

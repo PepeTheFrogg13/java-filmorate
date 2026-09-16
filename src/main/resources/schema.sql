@@ -45,11 +45,15 @@ CREATE TABLE IF NOT EXISTS "Director" (
     );
 
 CREATE TABLE IF NOT EXISTS "FilmDirector" (
+    "FilmDirectorId" INTEGER   NOT NULL AUTO_INCREMENT,
     "FilmId" INT NOT NULL,
     "DirectorId" INT NOT NULL,
     PRIMARY KEY ("FilmId", "DirectorId"),
     FOREIGN KEY ("FilmId") REFERENCES "Film"("FilmId") ON DELETE CASCADE,
-    FOREIGN KEY ("DirectorId") REFERENCES "Director"("DirectorId") ON DELETE CASCADE
+    FOREIGN KEY ("DirectorId") REFERENCES "Director"("DirectorId") ON DELETE CASCADE,
+    CONSTRAINT "pk_FilmDirector" PRIMARY KEY (
+                                         "FilmDirectorId"
+                                     )
     );
 
 CREATE TABLE IF NOT EXISTS "Genre" (
