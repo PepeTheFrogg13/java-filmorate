@@ -62,6 +62,7 @@ public class UserService {
     public User createUser(UserNewRequest userNewRequest) {
         User user = UserMapper.mapToUser(userNewRequest);
         validate(user);
+        if (user.getName().isBlank()) user.setName(user.getLogin());
         User newUser = userStorage.createUser(user);
         log.info("Добавлен пользователь с id = " + newUser.getId());
         return newUser;
