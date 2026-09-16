@@ -12,6 +12,7 @@ import ru.yandex.practicum.filmorate.model.Director;
 
 import java.time.LocalDate;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.Set;
 
 @Data
@@ -40,5 +41,5 @@ public class FilmUpdateRequest {
     //перечень жанров
     private ArrayList<GenreInsert> genres = new ArrayList<>();
 
-    private Set<Director> directors;
+    private Set<Director> directors = new HashSet<>();
 }
