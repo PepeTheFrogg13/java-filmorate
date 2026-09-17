@@ -163,8 +163,7 @@ public class FilmService {
 
         filmStorage.updateFilm(film);
 
-
-        return FilmMapper.mapToFilmDto(film);
+        return FilmMapper.mapToFilmDto(filmStorage.getFilmById(film.getId()).get());
     }
 
     public Film deleteFilm(Film film) {
