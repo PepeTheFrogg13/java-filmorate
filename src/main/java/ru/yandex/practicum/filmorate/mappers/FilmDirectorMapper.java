@@ -18,6 +18,7 @@ public class FilmDirectorMapper implements RowMapper<FilmDirector> {
         FilmDirector filmDirector = new FilmDirector();
         Long id = rs.getLong("FilmId");
         filmDirector.setFilmId(id);
+        filmDirector.setDirector(director);
         return filmDirector;
     }
 }
