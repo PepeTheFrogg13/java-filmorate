@@ -88,13 +88,12 @@ class FilmoRateApplicationTests {
         List<Event> events = eventStorage.getEventsByUserIds(List.of(2L));
 
         assertThat(events).anySatisfy(event -> {
-                    assertThat(event.getUserId()).isEqualTo(2L);
-                    assertThat(event.getEventType()).isEqualTo(EventType.LIKE);
-                    assertThat(event.getOperation()).isEqualTo(Operation.ADD);
-                    assertThat(event.getEntityId()).isEqualTo(1L);
-                });
+            assertThat(event.getUserId()).isEqualTo(2L);
+            assertThat(event.getEventType()).isEqualTo(EventType.LIKE);
+            assertThat(event.getOperation()).isEqualTo(Operation.ADD);
+            assertThat(event.getEntityId()).isEqualTo(1L);
+        });
     }
-
 
 
     @Test
