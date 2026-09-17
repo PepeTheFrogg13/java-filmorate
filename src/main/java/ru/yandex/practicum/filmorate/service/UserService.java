@@ -155,4 +155,12 @@ public class UserService {
                 .toList();
     }
 
+    public User deleteUser(Long id){
+        Optional<User> userOptional = userStorage.getUserById(id);
+        if (userOptional.isEmpty()){
+            throw new IdNotFoundException("Пользователь с id = " + id + " не найден");
+        }
+        return userStorage.deleteUser(userOptional.get());
+    }
+
 }
