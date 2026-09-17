@@ -67,7 +67,9 @@ public class FilmService {
         Map<Long, List> filmDirectors = filmDirectorStorage.getFilmDirectors();
         List<Film> filmList = filmStorage.findAll().stream().toList();
         for (Film film : filmList) {
-            film.setGenreList(filmGenres.get(film.getId()));
+            if (filmGenres.containsKey(film.getId())) {
+                film.setGenreList(filmGenres.get(film.getId()));
+            }
         }
         for (Film film : filmList) {
             film.setLikeList(userStorage.findLikesByFilm(film.getId()).stream().toList());
