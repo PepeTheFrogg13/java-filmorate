@@ -268,6 +268,38 @@ public class FilmService {
             film.setLikeList(userStorage.findLikesByFilm(film.getId()).stream().toList());
         }
 
+
         return films.stream().map(FilmMapper::mapToFilmDto).toList();
     }
+
+    public Collection<FilmDto> findCommonFilms(Long userId, Long friendId) {
+        if (userStorage.getUserById(userId).isEmpty()) {
+            throw new IdNotFoundException("Пользователь с id = " + userId + " не найден");
+        }
+        if (userStorage.getUserById(friendId).isEmpty()) {
+            throw new IdNotFoundException("Пользователь с id = " + friendId + " не найден");
+        }
+
+        return mapFilmsToDto(filmStorage.findCommonFilms(userId, friendId));
+    }
+
+    @SuppressWarnings("unchecked")
+    private Collection<FilmDto> mapFilmsToDto(Collection<Film> films) {
+        Map<Long, List> filmGenres = filmGenreStorage.getFilmGenres();
+        List<Film> filmList = films.stream().toList();
+
+        for (Film film : filmList) {
+            film.setGenreList(filmGenres.get(film.getId()));
+        }
+        for (Film film : filmList) {
+            List<Genre> genres = filmGenres.containsKey(film.getId())
+                    ? (List<Genre>) filmGenres.get(film.getId())
+                    : new ArrayList<>();
+            film.setGenreList(genres);
+            film.setLikeList(userStorage.findLikesByFilm(film.getId()).stream().toList());
+        }
+        return filmList.stream().map(FilmMapper::mapToFilmDto).toList();
+    }
+
+
 }

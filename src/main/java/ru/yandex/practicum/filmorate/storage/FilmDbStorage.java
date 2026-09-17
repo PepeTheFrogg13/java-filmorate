@@ -27,6 +27,19 @@ public class FilmDbStorage extends BaseRepository<Film> implements FilmStorage {
     private static final String INSERT_LIKE = "MERGE INTO \"FilmLikes\" (\"FilmId\",\"UserID\") KEY (\"FilmId\",\"UserID\") VALUES (?,?);";
     private static final String DELETE_LIKE = "DELETE FROM \"FilmLikes\" WHERE \"FilmId\" = ? AND \"UserID\" = ?;";
 
+    private static final String FIND_COMMON_FILMS =
+            "SELECT f.*, r.\"Name\" AS \"RatingName\" " +
+                    "FROM \"Film\" f " +
+                    "LEFT JOIN \"Rating\" r ON r.\"RatingId\" = f.\"RatingId\" " +
+                    "INNER JOIN \"FilmLikes\" l1 ON l1.\"FilmId\" = f.\"FilmId\" AND l1.\"UserID\" = ? " +
+                    "INNER JOIN \"FilmLikes\" l2 ON l2.\"FilmId\" = f.\"FilmId\" AND l2.\"UserID\" = ? " +
+                    "LEFT JOIN (" +
+                    "    SELECT \"FilmId\", COUNT(*) AS likes_count " +
+                    "    FROM \"FilmLikes\" " +
+                    "    GROUP BY \"FilmId\"" +
+                    ") lc ON lc.\"FilmId\" = f.\"FilmId\" " +
+                    "ORDER BY COALESCE(lc.likes_count, 0) DESC, f.\"FilmId\" ASC;";
+
     private static final String FIND_TOP_LIKES = "SELECT \"Film\".*,\n" +
             "\t   \"Rating\".\"Name\" AS \"RatingName\"\n" +
             "  FROM \"Film\" \n" +
@@ -271,5 +284,10 @@ public class FilmDbStorage extends BaseRepository<Film> implements FilmStorage {
             film.setDirectors(new HashSet<>(directors));
         }
         return films;
+    }
+
+    @Override
+    public Collection<Film> findCommonFilms(Long userId, Long friendId) {
+        return findMany(FIND_COMMON_FILMS, userId, friendId);
     }
 }
