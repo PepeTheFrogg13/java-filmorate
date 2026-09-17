@@ -89,7 +89,7 @@ public class UserService {
             throw new IdNotFoundException("Пользователь с id = " + friendId + " не найден");
         }
 
-        User user = userStorage.changeFriend(id, friendId,1)
+        User user = userStorage.changeFriend(id, friendId, 1)
                 .orElseThrow(() -> new ValidationException("Не удалось добавить пользователя в друзья"));
 
         eventStorage.addEvent(id, EventType.FRIEND, Operation.ADD, friendId);
@@ -108,7 +108,7 @@ public class UserService {
         }
 
         User user = userStorage.changeFriend(id, friendId, 2)
-                        .orElseThrow(() -> new ValidationException("Не удалось удалить пользователя из друзей"));
+                .orElseThrow(() -> new ValidationException("Не удалось удалить пользователя из друзей"));
 
         eventStorage.addEvent(id, EventType.FRIEND, Operation.REMOVE, friendId);
 
@@ -155,9 +155,9 @@ public class UserService {
                 .toList();
     }
 
-    public User deleteUser(Long id){
+    public User deleteUser(Long id) {
         Optional<User> userOptional = userStorage.getUserById(id);
-        if (userOptional.isEmpty()){
+        if (userOptional.isEmpty()) {
             throw new IdNotFoundException("Пользователь с id = " + id + " не найден");
         }
         return userStorage.deleteUser(userOptional.get());
