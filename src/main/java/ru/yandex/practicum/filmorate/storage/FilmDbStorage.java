@@ -80,10 +80,12 @@ public class FilmDbStorage extends BaseRepository<Film> implements FilmStorage {
 
 
     private final DirectorDbStorage directorDbStorage;
+    private final GenreStorage genreStorage;
 
-    public FilmDbStorage(JdbcTemplate jdbc, RowMapper<Film> mapper, DirectorDbStorage directorDbStorage) {
+    public FilmDbStorage(JdbcTemplate jdbc, RowMapper<Film> mapper, DirectorDbStorage directorDbStorage, GenreStorage genreStorage) {
         super(jdbc, mapper);
         this.directorDbStorage = directorDbStorage;
+        this.genreStorage = genreStorage;
     }
 
     @Override
@@ -97,8 +99,10 @@ public class FilmDbStorage extends BaseRepository<Film> implements FilmStorage {
         Optional<Film> filmOpt = findOne(FIND_FILM_BY_ID, id);
         if (filmOpt.isPresent()) {
             Film film = filmOpt.get();
+            List<Genre> genreList = genreStorage.findByFilm(id).stream().toList();
             List<Director> directors = directorDbStorage.findDirectorsByFilmId(film.getId());
             film.setDirectors(new HashSet<>(directors));
+            film.setGenreList(genreList);
         }
         return filmOpt;
     }
