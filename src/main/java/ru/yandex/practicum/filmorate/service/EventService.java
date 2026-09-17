@@ -29,10 +29,11 @@ public class EventService {
         userStorage.getUserById(userId)
                 .orElseThrow(() -> new IdNotFoundException("Пользователь с id = " + userId + " не найден"));
 
-        List<Long> feedUserIds = userStorage.findFriends(userId).stream()
+        /*List<Long> feedUserIds = userStorage.findFriends(userId).stream()
                 .map(User::getId)
-                .collect(Collectors.toCollection(ArrayList::new));
+                .collect(Collectors.toCollection(ArrayList::new));*/
 
+        List<Long> feedUserIds = new ArrayList<>();
         feedUserIds.add(userId);
 
         List<Event> events = eventStorage.getEventsByUserIds(feedUserIds);
