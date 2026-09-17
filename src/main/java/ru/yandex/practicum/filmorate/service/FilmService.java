@@ -166,8 +166,12 @@ public class FilmService {
         return FilmMapper.mapToFilmDto(filmStorage.getFilmById(film.getId()).get());
     }
 
-    public Film deleteFilm(Film film) {
-        return filmStorage.deleteFilm(film);
+    public Film deleteFilm(Long id) {
+        Optional<Film> filmOptional = filmStorage.getFilmById(id);
+        if (filmOptional.isEmpty()) {
+            throw new IdNotFoundException("Фильм с id = " + id + " не найден");
+        }
+        return filmStorage.deleteFilm(filmOptional.get());
     }
 
     public Film addLike(Long id, Long userId) {

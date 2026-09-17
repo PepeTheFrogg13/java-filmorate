@@ -11,6 +11,7 @@ import ru.yandex.practicum.filmorate.service.FilmService;
 
 import java.util.Collection;
 import java.util.List;
+import java.util.Optional;
 
 
 @RestController
@@ -73,5 +74,10 @@ public class FilmController {
     @DeleteMapping("/{id}/like/{userId}")
     public Film dislikeFilm(@PathVariable Long id, @PathVariable Long userId) {
         return filmService.deleteLike(id, userId);
+    }
+
+    @DeleteMapping("/{id}")
+    public Film deleteFilm(@PathVariable Long id) {
+        return filmService.deleteFilm(id);
     }
 }
