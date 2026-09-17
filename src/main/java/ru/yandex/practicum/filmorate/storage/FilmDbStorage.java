@@ -19,7 +19,7 @@ public class FilmDbStorage extends BaseRepository<Film> implements FilmStorage {
     private static final String INSERT_FILM = "INSERT INTO \"Film\" (\"Name\",\"Description\",\"ReleaseDate\",\"Duration\", \"RatingId\") VALUES (?,?,?,?,?);";
     private static final String INSERT_FILM_GENRE = "MERGE INTO \"FilmGenre\" (\"FilmId\",\"GenreId\") KEY(\"FilmId\",\"GenreId\") VALUES (?,?);";
 
-    private static final String UPDATE_FILM = "UPDATE \"Film\" SET \"Name\" = ?, \"Description\" = ?, \"ReleaseDate\" = ?, \"Duration\" = ? WHERE \"FilmId\" = ?;";
+    private static final String UPDATE_FILM = "UPDATE \"Film\" SET \"Name\" = ?, \"Description\" = ?, \"ReleaseDate\" = ?, \"Duration\" = ?, \"RatingId\" = ?  WHERE \"FilmId\" = ?;";
 
     private static final String DELETE_FILM = "DELETE FROM \"Film\" WHERE \"Film\".\"FilmId\" = ?;";
     private static final String DELETE_FILM_GENRE = "DELETE FROM \"FilmGenre\" WHERE \"FilmId\" = ? AND \"GenreId\" = ?;";
@@ -125,7 +125,7 @@ public class FilmDbStorage extends BaseRepository<Film> implements FilmStorage {
             throw new IdNotFoundException("Фильм с id = " + film.getId() + " не найден");
         }
         Film oldFilm = filmOptional.get();
-        update(UPDATE_FILM, film.getName(), film.getDescription(), film.getReleaseDate(), film.getDuration(), film.getId());
+        update(UPDATE_FILM, film.getName(), film.getDescription(), film.getReleaseDate(), film.getDuration(), film.getRating().getId(), film.getId());
         for (Genre genre : oldFilm.getGenreList()) {
             if (!film.getGenreList().contains(genre)) {
                 update(DELETE_FILM_GENRE, film.getId(), genre.getId());

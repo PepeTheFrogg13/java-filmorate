@@ -128,7 +128,7 @@ public class FilmService {
 
     public FilmDto updateFilm(FilmUpdateRequest filmUpdateRequest) {
         Film film = FilmMapper.mapToFilm(filmUpdateRequest);
-        Optional<Film> filmOptional = filmStorage.updateFilm(film);
+        Optional<Film> filmOptional = filmStorage.getFilmById(film.getId());
         if (filmOptional.isEmpty()) {
             throw new IdNotFoundException("Фильм с id = " + film.getId() + " не найден");
         }
@@ -160,6 +160,8 @@ public class FilmService {
                 film.getDirectors().add(directorOptional.get());
             }
         }
+
+        filmStorage.updateFilm(film);
 
 
         return FilmMapper.mapToFilmDto(film);
