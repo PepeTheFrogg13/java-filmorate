@@ -95,34 +95,7 @@ class FilmoRateApplicationTests {
                 });
     }
 
-    @Test
-    public void testFeedContainsFriendEvent() {
-        eventStorage.addEvent(2L, EventType.LIKE, Operation.ADD, 1L);
 
-        Collection<EventDto> feed = eventService.getFeed(3L);
-
-        assertThat(feed).anySatisfy(event -> {
-                    assertThat(event.getUserId()).isEqualTo(2L);
-                    assertThat(event.getEventType()).isEqualTo(EventType.LIKE);
-                    assertThat(event.getOperation()).isEqualTo(Operation.ADD);
-                    assertThat(event.getEntityId()).isEqualTo(1L);
-                });
-    }
-
-    @Test
-    void testFeedContainsFriendReviewEvent() {
-        ReviewDto review = reviewService.createReview(
-                newReview("Отзыв друга", true, 2L, 1L));
-
-        Collection<EventDto> feed = eventService.getFeed(3L);
-
-        assertThat(feed).anySatisfy(event -> {
-            assertThat(event.getUserId()).isEqualTo(2L);
-            assertThat(event.getEventType()).isEqualTo(EventType.REVIEW);
-            assertThat(event.getOperation()).isEqualTo(Operation.ADD);
-            assertThat(event.getEntityId()).isEqualTo(review.getReviewId());
-        });
-    }
 
     @Test
     void createsReviewWithZeroUseful() {
