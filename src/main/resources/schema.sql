@@ -104,12 +104,12 @@ CREATE TABLE IF NOT EXISTS "ReviewLikes" (
     );
 
 
-ALTER TABLE "UserFriends" ADD CONSTRAINT "fk_UserFriends_UserSenderId" FOREIGN KEY("UserSenderId") REFERENCES "User" ("UserID") ON DELETE SET NULL;
-ALTER TABLE "UserFriends" ADD CONSTRAINT "fk_UserFriends_UserRecipientId" FOREIGN KEY("UserRecipientId") REFERENCES "User" ("UserID") ON DELETE SET NULL;
-ALTER TABLE "UserFriends" ADD CONSTRAINT "fk_UserFriends_StatusId" FOREIGN KEY("StatusId") REFERENCES "FriendStatus" ("StatusId") ON DELETE SET NULL;
+ALTER TABLE "UserFriends" ADD CONSTRAINT "fk_UserFriends_UserSenderId" FOREIGN KEY("UserSenderId") REFERENCES "User" ("UserID") ON DELETE CASCADE ;
+ALTER TABLE "UserFriends" ADD CONSTRAINT "fk_UserFriends_UserRecipientId" FOREIGN KEY("UserRecipientId") REFERENCES "User" ("UserID") ON DELETE CASCADE;
+ALTER TABLE "UserFriends" ADD CONSTRAINT "fk_UserFriends_StatusId" FOREIGN KEY("StatusId") REFERENCES "FriendStatus" ("StatusId") ON DELETE CASCADE;
 ALTER TABLE "Film" ADD CONSTRAINT "fk_Film_RatingId" FOREIGN KEY("RatingId") REFERENCES "Rating" ("RatingId") ON DELETE SET NULL;
-ALTER TABLE "FilmGenre" ADD CONSTRAINT "fk_FilmGenre_FilmId" FOREIGN KEY("FilmId") REFERENCES "Film" ("FilmId") ON DELETE SET NULL;
-ALTER TABLE "FilmGenre" ADD CONSTRAINT "fk_FilmGenre_GenreId" FOREIGN KEY("GenreId") REFERENCES "Genre" ("GenreId") ON DELETE SET NULL;
-ALTER TABLE "FilmLikes" ADD CONSTRAINT "fk_FilmLikes_FilmId" FOREIGN KEY("FilmId") REFERENCES "Film" ("FilmId") ON DELETE SET NULL;
-ALTER TABLE "FilmLikes" ADD CONSTRAINT "fk_FilmLikes_UserID" FOREIGN KEY("UserID") REFERENCES "User" ("UserID") ON DELETE SET NULL;
+ALTER TABLE "FilmGenre" ADD CONSTRAINT "fk_FilmGenre_FilmId" FOREIGN KEY("FilmId") REFERENCES "Film" ("FilmId") ON DELETE CASCADE;
+ALTER TABLE "FilmGenre" ADD CONSTRAINT "fk_FilmGenre_GenreId" FOREIGN KEY("GenreId") REFERENCES "Genre" ("GenreId") ON DELETE CASCADE;
+ALTER TABLE "FilmLikes" ADD CONSTRAINT "fk_FilmLikes_FilmId" FOREIGN KEY("FilmId") REFERENCES "Film" ("FilmId") ON DELETE CASCADE;
+ALTER TABLE "FilmLikes" ADD CONSTRAINT "fk_FilmLikes_UserID" FOREIGN KEY("UserID") REFERENCES "User" ("UserID") ON DELETE CASCADE;
 ALTER TABLE "FilmDirector" ADD CONSTRAINT "uq_FilmDirector" UNIQUE ("FilmId", "DirectorId");
