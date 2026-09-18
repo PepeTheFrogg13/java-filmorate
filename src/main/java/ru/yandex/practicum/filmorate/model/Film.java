@@ -9,11 +9,11 @@ import lombok.Data;
 
 import java.time.LocalDate;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
-/**
- * Film.
- */
+
 @Data
 public class Film {
 
@@ -41,4 +41,5 @@ public class Film {
 
     private List<User> likeList = new ArrayList<>();
 
+    private Set<Director> directors = new HashSet<>();
 }

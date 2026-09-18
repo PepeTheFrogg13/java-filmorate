@@ -4,13 +4,11 @@ import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.core.RowMapper;
 import org.springframework.stereotype.Repository;
 import ru.yandex.practicum.filmorate.exceptions.IdNotFoundException;
+import ru.yandex.practicum.filmorate.model.Director;
 import ru.yandex.practicum.filmorate.model.Film;
 import ru.yandex.practicum.filmorate.model.Genre;
 
-
-import java.util.Collection;
-import java.util.List;
-import java.util.Optional;
+import java.util.*;
 
 @Repository
 public class FilmDbStorage extends BaseRepository<Film> implements FilmStorage {
@@ -21,13 +19,26 @@ public class FilmDbStorage extends BaseRepository<Film> implements FilmStorage {
     private static final String INSERT_FILM = "INSERT INTO \"Film\" (\"Name\",\"Description\",\"ReleaseDate\",\"Duration\", \"RatingId\") VALUES (?,?,?,?,?);";
     private static final String INSERT_FILM_GENRE = "MERGE INTO \"FilmGenre\" (\"FilmId\",\"GenreId\") KEY(\"FilmId\",\"GenreId\") VALUES (?,?);";
 
-    private static final String UPDATE_FILM = "UPDATE \"Film\" SET \"Name\" = ?, \"Description\" = ?, \"ReleaseDate\" = ?, \"Duration\" = ? WHERE \"FilmId\" = ?;";
+    private static final String UPDATE_FILM = "UPDATE \"Film\" SET \"Name\" = ?, \"Description\" = ?, \"ReleaseDate\" = ?, \"Duration\" = ?, \"RatingId\" = ?  WHERE \"FilmId\" = ?;";
 
     private static final String DELETE_FILM = "DELETE FROM \"Film\" WHERE \"Film\".\"FilmId\" = ?;";
     private static final String DELETE_FILM_GENRE = "DELETE FROM \"FilmGenre\" WHERE \"FilmId\" = ? AND \"GenreId\" = ?;";
 
     private static final String INSERT_LIKE = "MERGE INTO \"FilmLikes\" (\"FilmId\",\"UserID\") KEY (\"FilmId\",\"UserID\") VALUES (?,?);";
     private static final String DELETE_LIKE = "DELETE FROM \"FilmLikes\" WHERE \"FilmId\" = ? AND \"UserID\" = ?;";
+
+    private static final String FIND_COMMON_FILMS =
+            "SELECT f.*, r.\"Name\" AS \"RatingName\" " +
+                    "FROM \"Film\" f " +
+                    "LEFT JOIN \"Rating\" r ON r.\"RatingId\" = f.\"RatingId\" " +
+                    "INNER JOIN \"FilmLikes\" l1 ON l1.\"FilmId\" = f.\"FilmId\" AND l1.\"UserID\" = ? " +
+                    "INNER JOIN \"FilmLikes\" l2 ON l2.\"FilmId\" = f.\"FilmId\" AND l2.\"UserID\" = ? " +
+                    "LEFT JOIN (" +
+                    "    SELECT \"FilmId\", COUNT(*) AS likes_count " +
+                    "    FROM \"FilmLikes\" " +
+                    "    GROUP BY \"FilmId\"" +
+                    ") lc ON lc.\"FilmId\" = f.\"FilmId\" " +
+                    "ORDER BY COALESCE(lc.likes_count, 0) DESC, f.\"FilmId\" ASC;";
 
     private static final String FIND_TOP_LIKES = "SELECT \"Film\".*,\n" +
             "\t   \"Rating\".\"Name\" AS \"RatingName\"\n" +
@@ -40,26 +51,85 @@ public class FilmDbStorage extends BaseRepository<Film> implements FilmStorage {
             " ORDER BY TAB_FILM_LIKES.FILMLIKESCOUNT  DESC    \n" +
             "  LIMIT ?;";
 
-    public FilmDbStorage(JdbcTemplate jdbc, RowMapper<Film> mapper) {
+    private static final String FIND_RECOMMENDATIONS =
+            "WITH similar_user AS (" +
+                    "SELECT other_likes.\"UserID\" AS similar_user_id, COUNT(*) AS common_likes " +
+                    "FROM \"FilmLikes\" user_likes " +
+                    "JOIN \"FilmLikes\" other_likes " +
+                    "ON other_likes.\"FilmId\" = user_likes.\"FilmId\" " +
+                    "AND other_likes.\"UserID\" <> user_likes.\"UserID\" " +
+                    "WHERE user_likes.\"UserID\" = ? " +
+                    "GROUP BY other_likes.\"UserID\" " +
+                    "ORDER BY common_likes DESC, other_likes.\"UserID\" ASC " +
+                    "LIMIT 1" +
+                    ") " +
+                    "SELECT f.*, r.\"Name\" AS \"RatingName\" " +
+                    "FROM similar_user su " +
+                    "JOIN \"FilmLikes\" recommended_likes " +
+                    "ON recommended_likes.\"UserID\" = su.similar_user_id " +
+                    "JOIN \"Film\" f ON f.\"FilmId\" = recommended_likes.\"FilmId\" " +
+                    "LEFT JOIN \"Rating\" r ON r.\"RatingId\" = f.\"RatingId\" " +
+                    "WHERE NOT EXISTS (" +
+                    "SELECT 1 FROM \"FilmLikes\" own_likes " +
+                    "WHERE own_likes.\"UserID\" = ? " +
+                    "AND own_likes.\"FilmId\" = recommended_likes.\"FilmId\"" +
+                    ") " +
+                    "ORDER BY f.\"FilmId\" ASC;";
+
+    // Получить фильмы конкретного режиссёра с сортировкой
+    private static final String FIND_FILMS_BY_DIRECTOR =
+            "SELECT f.\"FilmId\", f.\"Name\", f.\"Description\", f.\"ReleaseDate\", f.\"Duration\", f.\"RatingId\", r.\"Name\" AS \"RatingName\" " +
+                    "FROM \"Film\" f " +
+                    "JOIN \"FilmDirector\" fd ON f.\"FilmId\" = fd.\"FilmId\" " +
+                    "LEFT JOIN \"Rating\" r ON f.\"RatingId\" = r.\"RatingId\" " +
+                    "WHERE fd.\"DirectorId\" = ?";
+
+    // Сортировка по году выпуска
+    private static final String ORDER_BY_YEAR = " ORDER BY f.\"ReleaseDate\"";
+
+    // Сортировка по количеству лайков
+    private static final String ORDER_BY_LIKES =
+            " ORDER BY (SELECT COUNT(*) FROM \"FilmLikes\" WHERE \"FilmId\" = f.\"FilmId\") DESC";
+
+
+    private final DirectorDbStorage directorDbStorage;
+    private final GenreStorage genreStorage;
+
+    public FilmDbStorage(JdbcTemplate jdbc, RowMapper<Film> mapper, DirectorDbStorage directorDbStorage, GenreStorage genreStorage) {
         super(jdbc, mapper);
+        this.directorDbStorage = directorDbStorage;
+        this.genreStorage = genreStorage;
     }
 
     @Override
     public List<Film> findAll() {
-        return findMany(FIND_ALL_FILMS);
+        List<Film> films = findMany(FIND_ALL_FILMS);
+        return films;
     }
 
     @Override
     public Optional<Film> getFilmById(Long id) {
-        return findOne(FIND_FILM_BY_ID, id);
+        Optional<Film> filmOpt = findOne(FIND_FILM_BY_ID, id);
+        if (filmOpt.isPresent()) {
+            Film film = filmOpt.get();
+            List<Genre> genreList = genreStorage.findByFilm(id).stream().toList();
+            List<Director> directors = directorDbStorage.findDirectorsByFilmId(film.getId());
+            film.setDirectors(new HashSet<>(directors));
+            film.setGenreList(genreList);
+        }
+        return filmOpt;
     }
 
     @Override
     public Film createFilm(Film film) {
         Long ratingId = film.getRating().getId();
         Long id = insert(INSERT_FILM, film.getName(), film.getDescription(), film.getReleaseDate(), film.getDuration(), ratingId);
+
         for (Genre genre : film.getGenreList()) {
             insert(INSERT_FILM_GENRE, id, genre.getId());
+        }
+        if (film.getDirectors() != null && !film.getDirectors().isEmpty()) {
+            directorDbStorage.addDirectorsToFilm(id, film.getDirectors());
         }
         film.setId(id);
         return film;
@@ -72,7 +142,7 @@ public class FilmDbStorage extends BaseRepository<Film> implements FilmStorage {
             throw new IdNotFoundException("Фильм с id = " + film.getId() + " не найден");
         }
         Film oldFilm = filmOptional.get();
-        update(UPDATE_FILM, film.getName(), film.getDescription(), film.getReleaseDate(), film.getDuration(), film.getId());
+        update(UPDATE_FILM, film.getName(), film.getDescription(), film.getReleaseDate(), film.getDuration(), film.getRating().getId(), film.getId());
         for (Genre genre : oldFilm.getGenreList()) {
             if (!film.getGenreList().contains(genre)) {
                 update(DELETE_FILM_GENRE, film.getId(), genre.getId());
@@ -82,6 +152,10 @@ public class FilmDbStorage extends BaseRepository<Film> implements FilmStorage {
             if (!oldFilm.getGenreList().contains(genre)) {
                 insert(INSERT_FILM_GENRE, film.getId(), genre.getId());
             }
+        }
+        directorDbStorage.removeDirectorsFromFilm(film.getId());
+        if (film.getDirectors() != null && !film.getDirectors().isEmpty()) {
+            directorDbStorage.addDirectorsToFilm(film.getId(), film.getDirectors());
         }
         return getFilmById(film.getId());
     }
@@ -104,8 +178,112 @@ public class FilmDbStorage extends BaseRepository<Film> implements FilmStorage {
 
     @Override
     public Collection<Film> findTopLikes(Integer top) {
-        return findMany(FIND_TOP_LIKES, top);
+        List<Film> films = findMany(FIND_TOP_LIKES, top);
+        for (Film film : films) {
+            List<Director> directors = directorDbStorage.findDirectorsByFilmId(film.getId());
+            film.setDirectors(new HashSet<>(directors));
+        }
+        return films;
     }
 
+    @Override
+    public Collection<Film> findTopLikes(Integer top, Long genreId, Integer year) {
+        StringBuilder query = new StringBuilder(
+                "SELECT f.*, r.\"Name\" AS \"RatingName\" " +
+                        "FROM \"Film\" f " +
+                        "LEFT JOIN \"Rating\" r ON r.\"RatingId\" = f.\"RatingId\" " +
+                        "LEFT JOIN (" +
+                        "    SELECT \"FilmId\", COUNT(*) AS likes_count " +
+                        "    FROM \"FilmLikes\" " +
+                        "    GROUP BY \"FilmId\"" +
+                        ") lc ON lc.\"FilmId\" = f.\"FilmId\" " +
+                        "WHERE 1 = 1 ");
 
+        List<Object> params = new ArrayList<>();
+
+        if (genreId != null) {
+            query.append("AND EXISTS (" +
+                    "SELECT 1 FROM \"FilmGenre\" fg " +
+                    "WHERE fg.\"FilmId\" = f.\"FilmId\" AND fg.\"GenreId\" = ?" +
+                    ") ");
+            params.add(genreId);
+        }
+
+        if (year != null) {
+            query.append("AND EXTRACT(YEAR FROM f.\"ReleaseDate\") = ? ");
+            params.add(year);
+        }
+
+        query.append("ORDER BY COALESCE(lc.likes_count, 0) DESC, f.\"FilmId\" ASC LIMIT ?;");
+        params.add(top);
+
+        List<Film> films = (List<Film>) findMany(query.toString(), params.toArray());
+
+        for (Film film : films) {
+            List<Director> directors = directorDbStorage.findDirectorsByFilmId(film.getId());
+            film.setDirectors(new HashSet<>(directors));
+        }
+        return films;
+    }
+
+    @Override
+    public Collection<Film> findRecommendations(Long userId) {
+        return findMany(FIND_RECOMMENDATIONS, userId, userId);
+    }
+
+    @Override
+    public List<Film> getFilmsByDirector(Long directorId, String sortBy) {
+        String sql = FIND_FILMS_BY_DIRECTOR;
+        if ("likes".equalsIgnoreCase(sortBy)) {
+            sql += ORDER_BY_LIKES;
+        } else {
+            sql += ORDER_BY_YEAR;
+        }
+        List<Film> films = findMany(sql, directorId);
+        for (Film film : films) {
+            List<Director> directors = directorDbStorage.findDirectorsByFilmId(film.getId());
+            film.setDirectors(new HashSet<>(directors));
+        }
+        return films;
+    }
+
+    @Override
+    public List<Film> search(String query, String by) {
+        boolean searchByTitle = by.contains("title");
+        boolean searchByDirector = by.contains("director");
+
+        StringBuilder sqlBuilder = new StringBuilder();
+        sqlBuilder.append("SELECT f.\"FilmId\", f.\"Name\", f.\"Description\", f.\"ReleaseDate\", f.\"Duration\", f.\"RatingId\", r.\"Name\" AS \"RatingName\" ")
+                .append("FROM \"Film\" f ")
+                .append("LEFT JOIN \"FilmDirector\" fd ON f.\"FilmId\" = fd.\"FilmId\" ")
+                .append("LEFT JOIN \"Director\" d ON fd.\"DirectorId\" = d.\"DirectorId\" ")
+                .append("LEFT JOIN \"Rating\" r ON f.\"RatingId\" = r.\"RatingId\" ")
+                .append("WHERE 1=1 ");
+
+        List<Object> params = new ArrayList<>();
+
+        if (searchByTitle && searchByDirector) {
+            sqlBuilder.append(" AND (LOWER(f.\"Name\") LIKE LOWER(?) OR LOWER(d.\"Name\") LIKE LOWER(?)) ");
+            params.add("%" + query + "%");
+            params.add("%" + query + "%");
+        } else if (searchByTitle) {
+            sqlBuilder.append(" AND LOWER(f.\"Name\") LIKE LOWER(?) ");
+            params.add("%" + query + "%");
+        } else if (searchByDirector) {
+            sqlBuilder.append(" AND LOWER(d.\"Name\") LIKE LOWER(?) ");
+            params.add("%" + query + "%");
+        }
+
+        sqlBuilder.append(" GROUP BY f.\"FilmId\", f.\"Name\", f.\"Description\", f.\"ReleaseDate\", f.\"Duration\", f.\"RatingId\", r.\"Name\" ");
+        sqlBuilder.append(" ORDER BY (SELECT COUNT(*) FROM \"FilmLikes\" WHERE \"FilmId\" = f.\"FilmId\") DESC");
+
+        List<Film> films = findMany(sqlBuilder.toString(), params.toArray());
+
+        return films;
+    }
+
+    @Override
+    public Collection<Film> findCommonFilms(Long userId, Long friendId) {
+        return findMany(FIND_COMMON_FILMS, userId, friendId);
+    }
 }

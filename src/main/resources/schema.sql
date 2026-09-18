@@ -1,98 +1,115 @@
 CREATE TABLE IF NOT EXISTS "User" (
-    "UserID" INTEGER   NOT NULL AUTO_INCREMENT,
-    "Email" VARCHAR(200)   NOT NULL,
-    "Login" VARCHAR(200)   NOT NULL,
+                                      "UserID" INTEGER NOT NULL AUTO_INCREMENT,
+                                      "Email" VARCHAR(200) NOT NULL,
+    "Login" VARCHAR(200) NOT NULL,
     "Name" VARCHAR(200),
-    "Birthday" Date   NOT NULL,
-    CONSTRAINT "pk_User" PRIMARY KEY (
-                                         "UserID"
-                                     )
+    "Birthday" Date NOT NULL,
+    CONSTRAINT "pk_User" PRIMARY KEY ("UserID")
     );
 
 CREATE TABLE IF NOT EXISTS "FriendStatus" (
-                                              "StatusId" INTEGER   NOT NULL AUTO_INCREMENT,
-                                              "Name" VARCHAR(200)   NOT NULL,
-    CONSTRAINT "pk_FrinedStatus" PRIMARY KEY (
-                                                 "StatusId"
-                                             )
+                                              "StatusId" INTEGER NOT NULL AUTO_INCREMENT,
+                                              "Name" VARCHAR(200) NOT NULL,
+    CONSTRAINT "pk_FrinedStatus" PRIMARY KEY ("StatusId")
     );
 
 CREATE TABLE IF NOT EXISTS "UserFriends" (
-                                             "UserFriendsId" INTEGER   NOT NULL AUTO_INCREMENT,
-                                             "UserSenderId" int   NOT NULL,
-                                             "UserRecipientId" int   NOT NULL,
-                                             "StatusId" int   NOT NULL,
-                                             CONSTRAINT "pk_UserFriends" PRIMARY KEY (
-                                             "UserFriendsId"
-)
-    );
-
-CREATE TABLE IF NOT EXISTS "Film" (
-                                      "FilmId" INTEGER   NOT NULL AUTO_INCREMENT,
-                                      "Name" VARCHAR(200)   NOT NULL,
-    "Description" VARCHAR(200)   NOT NULL,
-    "ReleaseDate" Date   NOT NULL,
-    "Duration" INTEGER   NOT NULL,
-    "RatingId" INTEGER,   --NOT NULL,
-    CONSTRAINT "pk_Film" PRIMARY KEY (
-                                         "FilmId"
-                                     )
-    );
-
-CREATE TABLE IF NOT EXISTS "Genre" (
-                                       "GenreId" INTEGER   NOT NULL AUTO_INCREMENT,
-                                       "Name" VARCHAR(200)   NOT NULL,
-    CONSTRAINT "pk_Genre" PRIMARY KEY (
-                                          "GenreId"
-                                      )
+                                             "UserFriendsId" INTEGER NOT NULL AUTO_INCREMENT,
+                                             "UserSenderId" int NOT NULL,
+                                             "UserRecipientId" int NOT NULL,
+                                             "StatusId" int NOT NULL,
+                                             CONSTRAINT "pk_UserFriends" PRIMARY KEY ("UserFriendsId")
     );
 
 CREATE TABLE IF NOT EXISTS "Rating" (
-                                        "RatingId" INTEGER   NOT NULL AUTO_INCREMENT,
-                                        "Name" VARCHAR(200)   NOT NULL,
-    CONSTRAINT "pk_Rating" PRIMARY KEY (
-                                           "RatingId"
-                                       )
+                                        "RatingId" INTEGER NOT NULL AUTO_INCREMENT,
+                                        "Name" VARCHAR(200) NOT NULL,
+    CONSTRAINT "pk_Rating" PRIMARY KEY ("RatingId")
+    );
+
+CREATE TABLE IF NOT EXISTS "Genre" (
+                                       "GenreId" INTEGER NOT NULL AUTO_INCREMENT,
+                                       "Name" VARCHAR(200) NOT NULL,
+    CONSTRAINT "pk_Genre" PRIMARY KEY ("GenreId")
+    );
+
+CREATE TABLE IF NOT EXISTS "Director" (
+                                          "DirectorId" INT AUTO_INCREMENT PRIMARY KEY,
+                                          "Name" VARCHAR(255) NOT NULL
+    );
+
+CREATE TABLE IF NOT EXISTS "Film" (
+                                      "FilmId" INTEGER NOT NULL AUTO_INCREMENT,
+                                      "Name" VARCHAR(200) NOT NULL,
+    "Description" VARCHAR(200) NOT NULL,
+    "ReleaseDate" Date NOT NULL,
+    "Duration" INTEGER NOT NULL,
+    "RatingId" INTEGER,
+    CONSTRAINT "pk_Film" PRIMARY KEY ("FilmId")
+    );
+
+CREATE TABLE IF NOT EXISTS "FilmDirector" (
+                                              "FilmDirectorId" INT AUTO_INCREMENT PRIMARY KEY, -- Компактное и правильное объявление PK
+                                              "FilmId" INT NOT NULL,
+                                              "DirectorId" INT NOT NULL,
+                                              FOREIGN KEY ("FilmId") REFERENCES "Film"("FilmId") ON DELETE CASCADE,
+    FOREIGN KEY ("DirectorId") REFERENCES "Director"("DirectorId") ON DELETE CASCADE
     );
 
 CREATE TABLE IF NOT EXISTS "FilmGenre" (
-                                           "FilmGenreId" INTEGER   NOT NULL AUTO_INCREMENT,
-                                           "FilmId" INTEGER   NOT NULL,
-                                           "GenreId" INTEGER   NOT NULL,
-                                           CONSTRAINT "pk_FilmGenre" PRIMARY KEY (
-                                           "FilmGenreId"
-)
+                                           "FilmGenreId" INTEGER NOT NULL AUTO_INCREMENT,
+                                           "FilmId" INTEGER NOT NULL,
+                                           "GenreId" INTEGER NOT NULL,
+                                           CONSTRAINT "pk_FilmGenre" PRIMARY KEY ("FilmGenreId")
     );
 
 CREATE TABLE IF NOT EXISTS "FilmLikes" (
-                                           "FilmLikesId" INTEGER   NOT NULL AUTO_INCREMENT,
-                                           "FilmId" INTEGER   NOT NULL,
-                                           "UserID" INTEGER   NOT NULL,
-                                           CONSTRAINT "pk_FilmLikes" PRIMARY KEY (
-                                           "FilmLikesId"
-)
+                                           "FilmLikesId" INTEGER NOT NULL AUTO_INCREMENT,
+                                           "FilmId" INTEGER NOT NULL,
+                                           "UserID" INTEGER NOT NULL,
+                                           CONSTRAINT "pk_FilmLikes" PRIMARY KEY ("FilmLikesId")
     );
 
-ALTER TABLE "UserFriends" ADD CONSTRAINT IF NOT EXISTS "fk_UserFriends_UserSenderId" FOREIGN KEY("UserSenderId")
-    REFERENCES "User" ("UserID");
+CREATE TABLE IF NOT EXISTS "Events" (
+                                        event_id BIGINT GENERATED BY DEFAULT AS IDENTITY PRIMARY KEY,
+                                        timestamp BIGINT NOT NULL,
+                                        user_id INTEGER NOT NULL,
+                                        event_type VARCHAR(10) NOT NULL,
+    operation VARCHAR(10) NOT NULL,
+    entity_id BIGINT NOT NULL,
+    CONSTRAINT events_user FOREIGN KEY (user_id) REFERENCES "User" ("UserID") ON DELETE CASCADE
+    );
 
-ALTER TABLE "UserFriends" ADD CONSTRAINT IF NOT EXISTS "fk_UserFriends_UserRecipientId" FOREIGN KEY("UserRecipientId")
-    REFERENCES "User" ("UserID");
+CREATE TABLE IF NOT EXISTS "Review" (
+                                        "ReviewId" INTEGER NOT NULL AUTO_INCREMENT,
+                                        "Content" VARCHAR(2000) NOT NULL,
+    "IsPositive" BOOLEAN NOT NULL,
+    "UserID" INTEGER NOT NULL,
+    "FilmId" INTEGER NOT NULL,
+    "Useful" INTEGER NOT NULL DEFAULT 0,
+    CONSTRAINT "pk_Review" PRIMARY KEY ("ReviewId"),
+    CONSTRAINT "fk_Review_UserID" FOREIGN KEY ("UserID") REFERENCES "User" ("UserID") ON DELETE CASCADE,
+    CONSTRAINT "fk_Review_FilmId" FOREIGN KEY ("FilmId") REFERENCES "Film" ("FilmId") ON DELETE CASCADE
+    );
 
-ALTER TABLE "UserFriends" ADD CONSTRAINT IF NOT EXISTS "fk_UserFriends_StatusId" FOREIGN KEY("StatusId")
-    REFERENCES "FriendStatus" ("StatusId");
+CREATE TABLE IF NOT EXISTS "ReviewLikes" (
+                                             "ReviewLikesId" INTEGER NOT NULL AUTO_INCREMENT,
+                                             "ReviewId" INTEGER NOT NULL,
+                                             "UserID" INTEGER NOT NULL,
+                                             "IsLike" BOOLEAN NOT NULL,
+                                             CONSTRAINT "pk_ReviewLikes" PRIMARY KEY ("ReviewLikesId"),
+    CONSTRAINT "fk_ReviewLikes_ReviewId" FOREIGN KEY ("ReviewId") REFERENCES "Review" ("ReviewId") ON DELETE CASCADE,
+    CONSTRAINT "fk_ReviewLikes_UserID" FOREIGN KEY ("UserID") REFERENCES "User" ("UserID") ON DELETE CASCADE,
+    CONSTRAINT "uq_ReviewLikes_ReviewUser" UNIQUE ("ReviewId", "UserID")
+    );
 
-ALTER TABLE "Film" ADD CONSTRAINT IF NOT EXISTS "fk_Film_RatingId" FOREIGN KEY("RatingId")
-    REFERENCES "Rating" ("RatingId");
 
-ALTER TABLE "FilmGenre" ADD CONSTRAINT IF NOT EXISTS "fk_FilmGenre_FilmId" FOREIGN KEY("FilmId")
-    REFERENCES "Film" ("FilmId");
-
-ALTER TABLE "FilmGenre" ADD CONSTRAINT IF NOT EXISTS "fk_FilmGenre_GenreId" FOREIGN KEY("GenreId")
-    REFERENCES "Genre" ("GenreId");
-
-ALTER TABLE "FilmLikes" ADD CONSTRAINT IF NOT EXISTS "fk_FilmLikes_FilmId" FOREIGN KEY("FilmId")
-    REFERENCES "Film" ("FilmId");
-
-ALTER TABLE "FilmLikes" ADD CONSTRAINT IF NOT EXISTS "fk_FilmLikes_UserID" FOREIGN KEY("UserID")
-    REFERENCES "User" ("UserID");
+ALTER TABLE "UserFriends" ADD CONSTRAINT "fk_UserFriends_UserSenderId" FOREIGN KEY("UserSenderId") REFERENCES "User" ("UserID") ON DELETE CASCADE ;
+ALTER TABLE "UserFriends" ADD CONSTRAINT "fk_UserFriends_UserRecipientId" FOREIGN KEY("UserRecipientId") REFERENCES "User" ("UserID") ON DELETE CASCADE;
+ALTER TABLE "UserFriends" ADD CONSTRAINT "fk_UserFriends_StatusId" FOREIGN KEY("StatusId") REFERENCES "FriendStatus" ("StatusId") ON DELETE CASCADE;
+ALTER TABLE "Film" ADD CONSTRAINT "fk_Film_RatingId" FOREIGN KEY("RatingId") REFERENCES "Rating" ("RatingId") ON DELETE SET NULL;
+ALTER TABLE "FilmGenre" ADD CONSTRAINT "fk_FilmGenre_FilmId" FOREIGN KEY("FilmId") REFERENCES "Film" ("FilmId") ON DELETE CASCADE;
+ALTER TABLE "FilmGenre" ADD CONSTRAINT "fk_FilmGenre_GenreId" FOREIGN KEY("GenreId") REFERENCES "Genre" ("GenreId") ON DELETE CASCADE;
+ALTER TABLE "FilmLikes" ADD CONSTRAINT "fk_FilmLikes_FilmId" FOREIGN KEY("FilmId") REFERENCES "Film" ("FilmId") ON DELETE CASCADE;
+ALTER TABLE "FilmLikes" ADD CONSTRAINT "fk_FilmLikes_UserID" FOREIGN KEY("UserID") REFERENCES "User" ("UserID") ON DELETE CASCADE;
+ALTER TABLE "FilmDirector" ADD CONSTRAINT "uq_FilmDirector" UNIQUE ("FilmId", "DirectorId");
