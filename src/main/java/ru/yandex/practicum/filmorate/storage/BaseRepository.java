@@ -2,14 +2,12 @@ package ru.yandex.practicum.filmorate.storage;
 
 import lombok.RequiredArgsConstructor;
 import org.springframework.dao.EmptyResultDataAccessException;
-import org.springframework.jdbc.core.BatchPreparedStatementSetter;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.core.RowMapper;
 import org.springframework.jdbc.support.GeneratedKeyHolder;
 import ru.yandex.practicum.filmorate.exceptions.InternalServerException;
 
 import java.sql.PreparedStatement;
-import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.List;
 import java.util.Optional;
@@ -55,22 +53,6 @@ public class BaseRepository<T> {
     protected void update(String query, Object... params) {
         jdbc.update(query, params);
     }
-
-    protected <E> void batchUpdate(String query, List<E> updateLIst, BatchItemSetter<E> setter) {
-        jdbc.batchUpdate(query, new BatchPreparedStatementSetter() {
-            @Override
-            public void setValues(PreparedStatement preparedStatement, int i) throws SQLException {
-                E item = updateLIst.get(i);
-                setter.setValues(preparedStatement, item);
-            }
-
-            @Override
-            public int getBatchSize() {
-                return updateLIst.size();
-            }
-        });
-    }
-
 
     protected boolean delete(String query, Long id) {
         int rowsDeleted = jdbc.update(query, id);

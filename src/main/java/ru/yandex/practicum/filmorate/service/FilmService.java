@@ -30,7 +30,7 @@ public class FilmService {
     private final RatingStorage ratingStorage;
     private final GenreStorage genreStorage;
     private final FilmGenreStorage filmGenreStorage;
-    private final DirectorDbStorage directorStorage;
+    private final DirectorStorage directorStorage;
     private final DirectorService directorService;
     private final EventStorage eventStorage;
     private final FilmDirectorStorage filmDirectorStorage;
@@ -126,6 +126,7 @@ public class FilmService {
         return FilmMapper.mapToFilmDto(newFilm);
     }
 
+    @Transactional
     public FilmDto updateFilm(FilmUpdateRequest filmUpdateRequest) {
         Film film = FilmMapper.mapToFilm(filmUpdateRequest);
         Optional<Film> filmOptional = filmStorage.getFilmById(film.getId());
@@ -263,11 +264,21 @@ public class FilmService {
         List<Film> films = filmStorage.search(query, by);
 
         Map<Long, List> filmGenres = filmGenreStorage.getFilmGenres();
+        Map<Long, List> filmDirectors = filmDirectorStorage.getFilmDirectors();
+
         for (Film film : films) {
-            film.setGenreList(filmGenres.getOrDefault(film.getId(), new ArrayList<>()));
+            if (filmGenres.containsKey(film.getId())) {
+                film.setGenreList(filmGenres.get(film.getId()));
+            }
+        }
+        for (Film film : films) {
             film.setLikeList(userStorage.findLikesByFilm(film.getId()).stream().toList());
         }
-
+        for (Film film : films) {
+            if (filmDirectors.containsKey(film.getId())) {
+                film.setDirectors(new HashSet<>(filmDirectors.get(film.getId())));
+            }
+        }
 
         return films.stream().map(FilmMapper::mapToFilmDto).toList();
     }

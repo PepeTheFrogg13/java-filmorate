@@ -279,10 +279,6 @@ public class FilmDbStorage extends BaseRepository<Film> implements FilmStorage {
 
         List<Film> films = findMany(sqlBuilder.toString(), params.toArray());
 
-        for (Film film : films) {
-            List<Director> directors = directorDbStorage.findDirectorsByFilmId(film.getId());
-            film.setDirectors(new HashSet<>(directors));
-        }
         return films;
     }
 
